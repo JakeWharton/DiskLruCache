@@ -95,6 +95,7 @@ public final class DiskLruCache implements Closeable {
     static final String JOURNAL_FILE_TMP = "journal.tmp";
     static final String MAGIC = "libcore.io.DiskLruCache";
     static final String VERSION_1 = "1";
+    static final long ANY_TIMESTAMP = -1;
     private static final String CLEAN = "CLEAN";
     private static final String DIRTY = "DIRTY";
     private static final String REMOVE = "REMOVE";
@@ -236,6 +237,15 @@ public final class DiskLruCache implements Closeable {
     private final LinkedHashMap<String, Entry> lruEntries
             = new LinkedHashMap<String, Entry>(0, 0.75f, true);
     private int redundantOpCount;
+
+    /**
+     * To differentiate between old and current snapshots, each entry is given
+     * a timestamp each time an edit is committed. A snapshot is stale if its
+     * timestamp is not equal to its entry's current timestamp. This is a
+     * timestamp in the loosest sense: currentTimeMillis() and other clock APIs
+     * are not involved.
+     */
+    private long nextTimestamp = 0;
 
     /** This cache uses a single background thread to evict entries. */
     private final ExecutorService executorService = new ThreadPoolExecutor(0, 1,
@@ -473,22 +483,30 @@ public final class DiskLruCache implements Closeable {
             executorService.submit(cleanupCallable);
         }
 
-        return new Snapshot(ins);
+        return new Snapshot(key, entry.timestamp, ins);
     }
 
     /**
-     * Returns an editor for the entry named {@code key}, or null if it cannot
-     * currently be edited.
+     * Returns an editor for the entry named {@code key}, or null if another
+     * edit is in progress.
      */
-    public synchronized Editor edit(String key) throws IOException {
+    public Editor edit(String key) throws IOException {
+        return edit(key, ANY_TIMESTAMP);
+    }
+
+    private synchronized Editor edit(String key, long expectedTimestamp) throws IOException {
         checkNotClosed();
         validateKey(key);
         Entry entry = lruEntries.get(key);
+        if (expectedTimestamp != ANY_TIMESTAMP
+                && (entry == null || entry.timestamp != expectedTimestamp)) {
+            return null; // snapshot is stale
+        }
         if (entry == null) {
             entry = new Entry(key);
             lruEntries.put(key, entry);
         } else if (entry.currentEditor != null) {
-            return null;
+            return null; // another edit is in progress
         }
 
         Editor editor = new Editor(entry);
@@ -561,6 +579,9 @@ public final class DiskLruCache implements Closeable {
         if (entry.readable | success) {
             entry.readable = true;
             journalWriter.write(CLEAN + ' ' + entry.key + entry.getLengths() + '\n');
+            if (success) {
+                entry.timestamp = nextTimestamp++;
+            }
         } else {
             lruEntries.remove(entry.key);
             journalWriter.write(REMOVE + ' ' + entry.key + '\n');
@@ -685,11 +706,24 @@ public final class DiskLruCache implements Closeable {
     /**
      * A snapshot of the values for an entry.
      */
-    public static final class Snapshot implements Closeable {
+    public final class Snapshot implements Closeable {
+        private final String key;
+        private final long timestamp;
         private final InputStream[] ins;
 
-        private Snapshot(InputStream[] ins) {
+        private Snapshot(String key, long timestamp, InputStream[] ins) {
+            this.key = key;
+            this.timestamp = timestamp;
             this.ins = ins;
+        }
+
+        /**
+         * Returns an editor for this snapshot's entry, or null if either the
+         * entry has changed since this snapshot was created or if another edit
+         * is in progress.
+         */
+        public Editor edit() throws IOException {
+            return DiskLruCache.this.edit(key, timestamp);
         }
 
         /**
@@ -849,6 +883,9 @@ public final class DiskLruCache implements Closeable {
 
         /** The ongoing edit or null if this entry is not being edited. */
         private Editor currentEditor;
+
+        /** The timestamp of the most recently committed edit to this entry. */
+        private long timestamp;
 
         private Entry(String key) {
             this.key = key;

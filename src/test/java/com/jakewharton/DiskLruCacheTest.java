@@ -600,6 +600,59 @@ public final class DiskLruCacheTest extends TestCase {
         assertAbsent("A");
     }*/
 
+    public void testEditSameVersion() throws Exception {
+        set("A", "a", "a");
+        DiskLruCache.Snapshot snapshot = cache.get("A");
+        DiskLruCache.Editor editor = snapshot.edit();
+        editor.set(1, "a2");
+        editor.commit();
+        assertValue("A", "a", "a2");
+    }
+
+    public void testEditSnapshotAfterChangeAborted() throws Exception {
+        set("A", "a", "a");
+        DiskLruCache.Snapshot snapshot = cache.get("A");
+        DiskLruCache.Editor toAbort = snapshot.edit();
+        toAbort.set(0, "b");
+        toAbort.abort();
+        DiskLruCache.Editor editor = snapshot.edit();
+        editor.set(1, "a2");
+        editor.commit();
+        assertValue("A", "a", "a2");
+    }
+
+    public void testEditSnapshotAfterChangeCommitted() throws Exception {
+        set("A", "a", "a");
+        DiskLruCache.Snapshot snapshot = cache.get("A");
+        DiskLruCache.Editor toAbort = snapshot.edit();
+        toAbort.set(0, "b");
+        toAbort.commit();
+        assertNull(snapshot.edit());
+    }
+
+    public void testEditSinceEvicted() throws Exception {
+        cache.close();
+        cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+        set("A", "aa", "aaa"); // size 5
+        DiskLruCache.Snapshot snapshot = cache.get("A");
+        set("B", "bb", "bbb"); // size 5
+        set("C", "cc", "ccc"); // size 5; will evict 'A'
+        cache.flush();
+        assertNull(snapshot.edit());
+    }
+
+    public void testEditSinceEvictedAndRecreated() throws Exception {
+        cache.close();
+        cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+        set("A", "aa", "aaa"); // size 5
+        DiskLruCache.Snapshot snapshot = cache.get("A");
+        set("B", "bb", "bbb"); // size 5
+        set("C", "cc", "ccc"); // size 5; will evict 'A'
+        set("A", "a", "aaaa"); // size 5; will evict 'B'
+        cache.flush();
+        assertNull(snapshot.edit());
+    }
+
     private void assertJournalEquals(String... expectedBodyLines) throws Exception {
         List<String> expectedLines = new ArrayList<String>();
         expectedLines.add(MAGIC);
