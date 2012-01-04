@@ -95,7 +95,7 @@ public final class DiskLruCache implements Closeable {
     static final String JOURNAL_FILE_TMP = "journal.tmp";
     static final String MAGIC = "libcore.io.DiskLruCache";
     static final String VERSION_1 = "1";
-    static final long ANY_TIMESTAMP = -1;
+    static final long ANY_SEQUENCE_NUMBER = -1;
     private static final String CLEAN = "CLEAN";
     private static final String DIRTY = "DIRTY";
     private static final String REMOVE = "REMOVE";
@@ -240,12 +240,10 @@ public final class DiskLruCache implements Closeable {
 
     /**
      * To differentiate between old and current snapshots, each entry is given
-     * a timestamp each time an edit is committed. A snapshot is stale if its
-     * timestamp is not equal to its entry's current timestamp. This is a
-     * timestamp in the loosest sense: currentTimeMillis() and other clock APIs
-     * are not involved.
+     * a sequence number each time an edit is committed. A snapshot is stale if
+     * its sequence number is not equal to its entry's sequence number.
      */
-    private long nextTimestamp = 0;
+    private long nextSequenceNumber = 0;
 
     /** This cache uses a single background thread to evict entries. */
     private final ExecutorService executorService = new ThreadPoolExecutor(0, 1,
@@ -483,7 +481,7 @@ public final class DiskLruCache implements Closeable {
             executorService.submit(cleanupCallable);
         }
 
-        return new Snapshot(key, entry.timestamp, ins);
+        return new Snapshot(key, entry.sequenceNumber, ins);
     }
 
     /**
@@ -491,15 +489,15 @@ public final class DiskLruCache implements Closeable {
      * edit is in progress.
      */
     public Editor edit(String key) throws IOException {
-        return edit(key, ANY_TIMESTAMP);
+        return edit(key, ANY_SEQUENCE_NUMBER);
     }
 
-    private synchronized Editor edit(String key, long expectedTimestamp) throws IOException {
+    private synchronized Editor edit(String key, long expectedSequenceNumber) throws IOException {
         checkNotClosed();
         validateKey(key);
         Entry entry = lruEntries.get(key);
-        if (expectedTimestamp != ANY_TIMESTAMP
-                && (entry == null || entry.timestamp != expectedTimestamp)) {
+        if (expectedSequenceNumber != ANY_SEQUENCE_NUMBER
+                && (entry == null || entry.sequenceNumber != expectedSequenceNumber)) {
             return null; // snapshot is stale
         }
         if (entry == null) {
@@ -580,7 +578,7 @@ public final class DiskLruCache implements Closeable {
             entry.readable = true;
             journalWriter.write(CLEAN + ' ' + entry.key + entry.getLengths() + '\n');
             if (success) {
-                entry.timestamp = nextTimestamp++;
+                entry.sequenceNumber = nextSequenceNumber++;
             }
         } else {
             lruEntries.remove(entry.key);
@@ -708,12 +706,12 @@ public final class DiskLruCache implements Closeable {
      */
     public final class Snapshot implements Closeable {
         private final String key;
-        private final long timestamp;
+        private final long sequenceNumber;
         private final InputStream[] ins;
 
-        private Snapshot(String key, long timestamp, InputStream[] ins) {
+        private Snapshot(String key, long sequenceNumber, InputStream[] ins) {
             this.key = key;
-            this.timestamp = timestamp;
+            this.sequenceNumber = sequenceNumber;
             this.ins = ins;
         }
 
@@ -723,7 +721,7 @@ public final class DiskLruCache implements Closeable {
          * is in progress.
          */
         public Editor edit() throws IOException {
-            return DiskLruCache.this.edit(key, timestamp);
+            return DiskLruCache.this.edit(key, sequenceNumber);
         }
 
         /**
@@ -884,8 +882,8 @@ public final class DiskLruCache implements Closeable {
         /** The ongoing edit or null if this entry is not being edited. */
         private Editor currentEditor;
 
-        /** The timestamp of the most recently committed edit to this entry. */
-        private long timestamp;
+        /** The sequence number of the most recently committed edit to this entry. */
+        private long sequenceNumber;
 
         private Entry(String key) {
             this.key = key;
