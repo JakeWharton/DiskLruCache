@@ -47,85 +47,85 @@ appropriately.
 API
 ---
 
- *  `public static DiskLruCache open(File directory, int appVersion, int valueCount, long maxSize)`
+ *  __public static DiskLruCache open(File directory, int appVersion, int valueCount, long maxSize)__
 
     Opens the cache in `directory`, creating a cache if none exists there.
 
-    Params:
+    *Params:*
 
      * `directory` - a writable directory
      * `appVersion`
      * `valueCount` - the number of values per cache entry. Must be positive.
      * `maxSize` - the maximum number of bytes this cache should use to store
 
-    Throws:
+    *Throws:*
 
      * `IOException` - if reading or writing the cache directory fails
 
- *  `public Snapshot get(String key)`
+ *  __public Snapshot get(String key)__
 
     Returns a snapshot of the entry named `key`, or null if it doesn't exist is
     not currently readable. If a value is returned, it is moved to the head of
     the LRU queue.
 
-    Throws:
+    *Throws:*
 
      * `IOException`
 
- * `public Editor edit(String key)`
+ * __public Editor edit(String key)__
 
     Returns an editor for the entry named `key`, or `null` if it cannot
     currently be edited.
 
-    Throws:
+    *Throws:*
 
      * `IOException`
 
- *  `public File getDirectory()`
+ *  __public File getDirectory()__
 
     Returns the directory where this cache stores its data.
 
- *  `public long maxSize()`
+ *  __public long maxSize()__
 
     Returns the maximum number of bytes that this cache should use to store its
     data.
 
- *  `public long size()`
+ *  __public long size()__
 
     Returns the number of bytes currently being used to store the values in
     this cache. This may be greater than the max size if a background deletion
     is pending.
 
- *  `public boolean remove(String key)`
+ *  __public boolean remove(String key)__
 
-    Drops the entry for {@code key} if it exists and can be removed. Entries
-    actively being edited cannot be removed.
+    Drops the entry for `key` if it exists and can be removed. Entries actively
+    being edited cannot be removed.
 
-    Returns: `true` if an entry was removed
+    *Returns:* `true` if an entry was removed
 
-    Throws:
+    *Throws:*
 
      * `IOException`
 
- *  `public boolean isClosed()`
+ *  __public boolean isClosed()__
 
     Returns `true` if this cache has been closed.
 
- *  `public void flush()`
+ *  __public void flush()__
 
     Force buffered operations to the filesystem.
 
-    Throws;
+    *Throws:*
 
      * `IOException`
 
- *  `public void delete()`
+ *  __public void delete()__
 
     Closes the cache and deletes all of its stored values. This will delete all
     files in the cache directory including files that weren't created by the
     cache.
 
-    Throws:
+    *Throws:*
 
      * `IOException`
 
