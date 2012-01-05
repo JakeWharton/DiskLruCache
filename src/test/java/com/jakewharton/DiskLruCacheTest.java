@@ -20,9 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -33,7 +31,7 @@ import junit.framework.TestCase;
 import static com.jakewharton.DiskLruCache.JOURNAL_FILE;
 import static com.jakewharton.DiskLruCache.MAGIC;
 import static com.jakewharton.DiskLruCache.VERSION_1;
-//TODO import tests.io.MockOs;
+//import tests.io.MockOs;
 
 public final class DiskLruCacheTest extends TestCase {
     private final int appVersion = 100;
@@ -41,7 +39,7 @@ public final class DiskLruCacheTest extends TestCase {
     private File cacheDir;
     private File journalFile;
     private DiskLruCache cache;
-    //TODO private final MockOs mockOs = new MockOs();
+    //private final MockOs mockOs = new MockOs();
 
     @Override public void setUp() throws Exception {
         super.setUp();
@@ -53,11 +51,11 @@ public final class DiskLruCacheTest extends TestCase {
             file.delete();
         }
         cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
-        //TODO mockOs.install();
+        //mockOs.install();
     }
 
     @Override protected void tearDown() throws Exception {
-        //TODO mockOs.uninstall();
+        //mockOs.uninstall();
         cache.close();
         super.tearDown();
     }
@@ -573,7 +571,7 @@ public final class DiskLruCacheTest extends TestCase {
         assertNull(cache.get("A"));
     }
 
-    /* TODO public void testFileBecomesInaccessibleDuringReadResultsInIoException() throws Exception {
+    /*public void testFileBecomesInaccessibleDuringReadResultsInIoException() throws Exception {
         set("A", "aaaaa", "a");
         DiskLruCache.Snapshot snapshot = cache.get("A");
         InputStream in = snapshot.getInputStream(0);
@@ -587,7 +585,7 @@ public final class DiskLruCacheTest extends TestCase {
         snapshot.close();
     }*/
 
-    /* TODO public void testFileBecomesInaccessibleDuringWriteIsSilentlyDiscarded() throws Exception {
+    /*public void testFileBecomesInaccessibleDuringWriteIsSilentlyDiscarded() throws Exception {
         set("A", "a", "a");
         DiskLruCache.Editor editor = cache.edit("A");
         OutputStream out0 = editor.newOutputStream(0);
