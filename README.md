@@ -100,8 +100,8 @@ the LRU queue.
 
 __public Editor edit(String key)__
 
-Returns an editor for the entry named `key`, or `null` if it cannot
-currently be edited.
+Returns an editor for the entry named `key`, or `null` if another
+edit is in progress.
 
 *Throws:*
 
