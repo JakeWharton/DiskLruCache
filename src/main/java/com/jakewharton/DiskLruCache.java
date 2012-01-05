@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit;
  *     <li>When an entry is being <strong>created</strong> it is necessary to
  *         supply a full set of values; the empty value should be used as a
  *         placeholder if necessary.
- *     <li>When an entry is being <strong>created</strong>, it is not necessary
+ *     <li>When an entry is being <strong>edited</strong>, it is not necessary
  *         to supply data for every value; values default to their previous
  *         value.
  * </ul>
