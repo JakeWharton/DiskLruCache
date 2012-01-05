@@ -45,6 +45,27 @@ appropriately.
 
 
 
+Obtaining
+=========
+
+You can download a JAR of this library on the [GitHub download page][1].
+
+If you are a Maven user you can also add this library as a dependency since it
+it distributed to the central repositories. Simply add the following to your
+`pom.xml`:
+
+    <dependency>
+        <groupId>com.jakewharton</groupId>
+        <artifactId>disklrucache</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+
+If you would like to compile your own version, the library can be built by
+running `mvn clean package`. The output JAR will be in the `target/` directory.
+*(Note: this requires Maven be installed)*
+
+
+
 API
 ===
 
@@ -173,3 +194,7 @@ License
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+
+
+
+ [1]: https://github.com/JakeWharton/DiskLruCache
