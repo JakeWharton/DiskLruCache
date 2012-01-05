@@ -158,6 +158,16 @@ Force buffered operations to the filesystem.
 
 -----
 
+__public void close()__
+
+Closes this cache. Stored values will remain on the filesystem.
+
+*Throws:*
+
+ * `IOException`
+
+-----
+
 __public void delete()__
 
 Closes the cache and deletes all of its stored values. This will delete all
