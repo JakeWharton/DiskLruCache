@@ -46,24 +46,6 @@
 		<developerConnection>scm:git:git@github.com:JakeWharton/DiskLruCache.git</developerConnection>
 	</scm>
 
-	<distributionManagement>
-		<site>
-			<id>github-project-site</id>
-			<name>GitHub Project Pages</name>
-			<url>gitsite:git@github.com/JakeWharton/DiskLruCache.git</url>
-			<!--
-			YOU MUST PUT THE FOLLOWING IN ~/.m2/settings.xml
-
-			<servers>
-				<server>
-					<id>github-project-site</id>
-					<username>git</username>
-				</server>
-			</servers>
-			-->
-		</site>
-	</distributionManagement>
-
 	<organization>
 		<name>Jake Wharton</name>
 		<url>http://jakewharton.com</url>
@@ -80,7 +62,6 @@
 		<junit.version>4.8.2</junit.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 
 	<dependencies>
@@ -146,55 +127,6 @@
 				<artifactId>maven-scm-manager-plexus</artifactId>
 				<version>1.4</version>
 			</extension>
-			<extension>
-				<groupId>org.kathrynhuxtable.maven.wagon</groupId>
-				<artifactId>wagon-gitsite</artifactId>
-				<version>0.3.1</version>
-			</extension>
 		</extensions>
 	</build>
-
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>2.1.2</version>
-				<reportSets>
-					<reportSet>
-						<reports>
-							<report>summary</report>
-							<report>issue-tracking</report>
-							<report>dependencies</report>
-							<report>dependency-convergence</report>
-							<report>dependency-management</report>
-							<report>distribution-management</report>
-							<report>license</report>
-							<report>plugins</report>
-							<report>project-team</report>
-							<report>scm</report>
-						</reports>
-					</reportSet>
-				</reportSets>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.7</version>
-				<configuration>
-					<links>
-						<link>http://download.oracle.com/javase/6/docs/api/</link>
-					</links>
-				</configuration>
-				<reportSets>
-					<reportSet>
-						<id>default</id>
-						<reports>
-							<report>javadoc</report>
-						</reports>
-					</reportSet>
-				</reportSets>
-			</plugin>
-		</plugins>
-	</reporting>
 </project>
