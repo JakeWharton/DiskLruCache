@@ -44,90 +44,108 @@ appropriately.
 *Note: This implementation specifically targets Android compatibility.*
 
 
+
 API
----
+===
 
- *  __public static DiskLruCache open(File directory, int appVersion, int valueCount, long maxSize)__
+__public static DiskLruCache open(File directory, int appVersion, int valueCount, long maxSize)__
 
-    Opens the cache in `directory`, creating a cache if none exists there.
+Opens the cache in `directory`, creating a cache if none exists there.
 
-    *Params:*
+*Params:*
 
-     * `directory` - a writable directory
-     * `appVersion`
-     * `valueCount` - the number of values per cache entry. Must be positive.
-     * `maxSize` - the maximum number of bytes this cache should use to store
+ * `directory` - a writable directory
+ * `appVersion`
+ * `valueCount` - the number of values per cache entry. Must be positive.
+ * `maxSize` - the maximum number of bytes this cache should use to store
 
-    *Throws:*
+*Throws:*
 
-     * `IOException` - if reading or writing the cache directory fails
+ * `IOException` - if reading or writing the cache directory fails
 
- *  __public Snapshot get(String key)__
+-----
 
-    Returns a snapshot of the entry named `key`, or null if it doesn't exist is
-    not currently readable. If a value is returned, it is moved to the head of
-    the LRU queue.
+__public Snapshot get(String key)__
 
-    *Throws:*
+Returns a snapshot of the entry named `key`, or null if it doesn't exist is
+not currently readable. If a value is returned, it is moved to the head of
+the LRU queue.
 
-     * `IOException`
+*Throws:*
 
- * __public Editor edit(String key)__
+ * `IOException`
 
-    Returns an editor for the entry named `key`, or `null` if it cannot
-    currently be edited.
+-----
 
-    *Throws:*
+__public Editor edit(String key)__
 
-     * `IOException`
+Returns an editor for the entry named `key`, or `null` if it cannot
+currently be edited.
 
- *  __public File getDirectory()__
+*Throws:*
 
-    Returns the directory where this cache stores its data.
+ * `IOException`
 
- *  __public long maxSize()__
+-----
 
-    Returns the maximum number of bytes that this cache should use to store its
-    data.
+__public File getDirectory()__
 
- *  __public long size()__
+Returns the directory where this cache stores its data.
 
-    Returns the number of bytes currently being used to store the values in
-    this cache. This may be greater than the max size if a background deletion
-    is pending.
+-----
 
- *  __public boolean remove(String key)__
+__public long maxSize()__
 
-    Drops the entry for `key` if it exists and can be removed. Entries actively
-    being edited cannot be removed.
+Returns the maximum number of bytes that this cache should use to store its data.
 
-    *Returns:* `true` if an entry was removed
+-----
 
-    *Throws:*
+__public long size()__
 
-     * `IOException`
+Returns the number of bytes currently being used to store the values in
+this cache. This may be greater than the max size if a background deletion
+is pending.
 
- *  __public boolean isClosed()__
+-----
 
-    Returns `true` if this cache has been closed.
+__public boolean remove(String key)__
 
- *  __public void flush()__
+Drops the entry for `key` if it exists and can be removed. Entries actively
+being edited cannot be removed.
 
-    Force buffered operations to the filesystem.
+*Returns:* `true` if an entry was removed
 
-    *Throws:*
+*Throws:*
 
-     * `IOException`
+ * `IOException`
 
- *  __public void delete()__
+-----
 
-    Closes the cache and deletes all of its stored values. This will delete all
-    files in the cache directory including files that weren't created by the
-    cache.
+__public boolean isClosed()__
 
-    *Throws:*
+Returns `true` if this cache has been closed.
 
-     * `IOException`
+-----
+
+__public void flush()__
+
+Force buffered operations to the filesystem.
+
+*Throws:*
+
+ * `IOException`
+
+-----
+
+__public void delete()__
+
+Closes the cache and deletes all of its stored values. This will delete all
+files in the cache directory including files that weren't created by the
+cache.
+
+*Throws:*
+
+ * `IOException`
 
 
 
