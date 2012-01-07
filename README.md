@@ -57,7 +57,7 @@ it distributed to the central repositories. Simply add the following to your
     <dependency>
         <groupId>com.jakewharton</groupId>
         <artifactId>disklrucache</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </dependency>
 
 If you would like to compile your own version, the library can be built by
