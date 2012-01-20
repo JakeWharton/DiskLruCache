@@ -658,7 +658,7 @@ public final class DiskLruCacheTest extends TestCase {
     public void testAggressiveClearingHandledOnWrite() throws Exception {
         FileUtils.deleteDirectory(cacheDir);
         set("A", "a", "a");
-        //assertValue("A", "a", "a");
+        assertValue("A", "a", "a");
     }
 
     /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a> */
