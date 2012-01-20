@@ -60,6 +60,7 @@
 		<java.version>1.5</java.version>
 
 		<junit.version>4.8.2</junit.version>
+		<commons-io.version>2.1</commons-io.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -71,6 +72,12 @@
 			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
 
 	<build>

@@ -27,6 +27,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.commons.io.FileUtils;
 import junit.framework.TestCase;
 import static com.jakewharton.DiskLruCache.JOURNAL_FILE;
 import static com.jakewharton.DiskLruCache.MAGIC;
@@ -651,6 +652,29 @@ public final class DiskLruCacheTest extends TestCase {
         set("A", "a", "aaaa"); // size 5; will evict 'B'
         cache.flush();
         assertNull(snapshot.edit());
+    }
+
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a> */
+    public void testAggressiveClearingHandledOnWrite() throws Exception {
+        FileUtils.deleteDirectory(cacheDir);
+        set("A", "a", "a");
+        //assertValue("A", "a", "a");
+    }
+
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a> */
+    public void testAggressiveClearingHandledOnRead() throws Exception {
+        set("A", "a", "a");
+        FileUtils.deleteDirectory(cacheDir);
+        assertNull(cache.get("A"));
+    }
+
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a> */
+    public void testAggressiveClearingHandledOnEdit() throws Exception {
+        set("A", "a", "a");
+        DiskLruCache.Editor a = cache.get("A").edit();
+        FileUtils.deleteDirectory(cacheDir);
+        a.set(1, "a2");
+        a.commit();
     }
 
     private void assertJournalEquals(String... expectedBodyLines) throws Exception {

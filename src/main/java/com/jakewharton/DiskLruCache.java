@@ -793,7 +793,17 @@ public final class DiskLruCache implements Closeable {
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
                 }
-                return new FaultHidingOutputStream(new FileOutputStream(entry.getDirtyFile(index)));
+                //Try twice to get the file. If we get a FNF make a quick effort
+                //to recreate the directory in which the cache should exist.
+                //See: https://github.com/JakeWharton/DiskLruCache/issues/2
+                FileOutputStream out;
+                try {
+                    out = new FileOutputStream(entry.getDirtyFile(index));
+                } catch (FileNotFoundException e) {
+                    directory.mkdirs();
+                    out = new FileOutputStream(entry.getDirtyFile(index));
+                }
+                return new FaultHidingOutputStream(out);
             }
         }
 
