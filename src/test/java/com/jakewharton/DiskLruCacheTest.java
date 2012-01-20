@@ -662,13 +662,6 @@ public final class DiskLruCacheTest extends TestCase {
     }
 
     /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a> */
-    public void testAggressiveClearingHandledOnRead() throws Exception {
-        set("A", "a", "a");
-        FileUtils.deleteDirectory(cacheDir);
-        assertNull(cache.get("A"));
-    }
-
-    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a> */
     public void testAggressiveClearingHandledOnEdit() throws Exception {
         set("A", "a", "a");
         DiskLruCache.Editor a = cache.get("A").edit();
