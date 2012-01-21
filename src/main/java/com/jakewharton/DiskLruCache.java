@@ -547,13 +547,21 @@ public final class DiskLruCache implements Closeable {
         }
 
         // if this edit is creating the entry for the first time, every index must have a value
+        int invalid = 0;
         if (success && !entry.readable) {
             for (int i = 0; i < valueCount; i++) {
                 if (!entry.getDirtyFile(i).exists()) {
-                    editor.abort();
-                    throw new IllegalStateException("edit didn't create file " + i);
+                    invalid += 1;
                 }
             }
+        }
+        if (invalid > 0) {
+            editor.abort();
+            if (invalid == valueCount) {
+                //All writes failed, return silently
+                return;
+            }
+            throw new IllegalStateException("edit didn't create " + invalid + " files");
         }
 
         for (int i = 0; i < valueCount; i++) {
@@ -745,6 +753,13 @@ public final class DiskLruCache implements Closeable {
         }
     }
 
+    private static final OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
+        @Override
+        public void write(int b) throws IOException {
+            //Eat all writes silently. Nom nom.
+        }
+    };
+
     /**
      * Edits the values for an entry.
      */
@@ -768,7 +783,11 @@ public final class DiskLruCache implements Closeable {
                 if (!entry.readable) {
                     return null;
                 }
-                return new FileInputStream(entry.getCleanFile(index));
+                try {
+                    return new FileInputStream(entry.getCleanFile(index));
+                } catch (FileNotFoundException e) {
+                    return null;
+                }
             }
         }
 
@@ -793,18 +812,11 @@ public final class DiskLruCache implements Closeable {
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
                 }
-                //Try twice to get the file. If we get a FNF make a quick effort
-                //to recreate the directory in which the cache should exist.
-                //See: https://github.com/JakeWharton/DiskLruCache/issues/2
-                File outFile = entry.getDirtyFile(index);
-                FileOutputStream out;
                 try {
-                    out = new FileOutputStream(outFile);
+                    return new FaultHidingOutputStream(new FileOutputStream(entry.getDirtyFile(index)));
                 } catch (FileNotFoundException e) {
-                    directory.mkdirs();
-                    out = new FileOutputStream(outFile);
+                    return NULL_OUTPUT_STREAM;
                 }
-                return new FaultHidingOutputStream(out);
             }
         }
 

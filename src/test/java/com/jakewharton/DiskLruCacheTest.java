@@ -654,20 +654,34 @@ public final class DiskLruCacheTest extends TestCase {
         assertNull(snapshot.edit());
     }
 
-    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a> */
-    public void testAggressiveClearingHandledOnWrite() throws Exception {
+    /**
+     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a>
+     * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
+     **/
+    public void testAggressiveClearingHandlesWrite() throws Exception {
         FileUtils.deleteDirectory(cacheDir);
         set("A", "a", "a");
-        assertValue("A", "a", "a");
     }
 
-    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a> */
-    public void testAggressiveClearingHandledOnEdit() throws Exception {
+    /**
+     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a>
+     * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
+     **/
+    public void testAggressiveClearingHandlesEdit() throws Exception {
         set("A", "a", "a");
         DiskLruCache.Editor a = cache.get("A").edit();
         FileUtils.deleteDirectory(cacheDir);
         a.set(1, "a2");
         a.commit();
+    }
+
+    /**
+     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a>
+     * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
+     **/
+    public void testAggressiveClearingHandlesRead() throws Exception {
+        FileUtils.deleteDirectory(cacheDir);
+        assertNull(cache.get("A"));
     }
 
     private void assertJournalEquals(String... expectedBodyLines) throws Exception {
