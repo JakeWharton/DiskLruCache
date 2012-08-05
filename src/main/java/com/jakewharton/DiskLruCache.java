@@ -888,7 +888,7 @@ public final class DiskLruCache implements Closeable {
         private long sequenceNumber;
 
         private Entry(String key) {
-	        try {
+            try  {
                 this.key = URLEncoder.encode(key, UTF_8.name());
             } catch (UnsupportedEncodingException uee) {
                 throw new AssertionError(uee.getMessage());
