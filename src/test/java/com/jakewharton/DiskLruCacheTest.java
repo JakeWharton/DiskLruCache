@@ -65,6 +65,61 @@ public final class DiskLruCacheTest extends TestCase {
         assertJournalEquals();
     }
 
+    public void testValidateKey() throws Exception {
+        String key = null;
+        try {
+            key = "has_space ";
+            cache.edit(key);
+            fail("Exepcting an IllegalArgumentException as the key was invalid.");
+        } catch (IllegalArgumentException iae) {
+            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+        }
+        try {
+            key = "has_CR\r";
+            cache.edit(key);
+            fail("Exepcting an IllegalArgumentException as the key was invalid.");
+        } catch (IllegalArgumentException iae) {
+            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+        }
+        try {
+            key = "has_LF\n";
+            cache.edit(key);
+            fail("Exepcting an IllegalArgumentException as the key was invalid.");
+        } catch (IllegalArgumentException iae) {
+            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+        }
+        try {
+            key = "has_invalid/";
+            cache.edit(key);
+            fail("Exepcting an IllegalArgumentException as the key was invalid.");
+        } catch (IllegalArgumentException iae) {
+            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+        }
+        try {
+            key = "has_invalid\u2603";
+            cache.edit(key);
+            fail("Exepcting an IllegalArgumentException as the key was invalid.");
+        } catch (IllegalArgumentException iae) {
+            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+        }
+        try {
+            key = "this_is_way_too_long_this_is_way_too_long_this_is_way_too_long_this_is_way_too_long";
+            cache.edit(key);
+            fail("Exepcting an IllegalArgumentException as the key was too long.");
+        } catch (IllegalArgumentException iae) {
+            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+        }
+
+        // test valid cases
+
+        // exactly 64
+        key = "0123456789012345678901234567890123456789012345678901234567890123";
+        cache.edit(key).abort();
+        // contains all valid characters
+        key = "abcdefghijklmnopqrstuvwxyz_0123456789";
+        cache.edit(key).abort();
+    }
+
     public void testWriteAndReadEntry() throws Exception {
         DiskLruCache.Editor creator = cache.edit("k1");
         creator.set(0, "ABC");
@@ -378,118 +433,118 @@ public final class DiskLruCacheTest extends TestCase {
         cache.close();
         cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
 
-        set("A", "a", "aaa"); // size 4
-        set("B", "bb", "bbbb"); // size 6
+        set("a", "a", "aaa"); // size 4
+        set("b", "bb", "bbbb"); // size 6
         assertEquals(10, cache.size());
 
         // cause the size to grow to 12 should evict 'A'
-        set("C", "c", "c");
+        set("c", "c", "c");
         cache.flush();
         assertEquals(8, cache.size());
-        assertAbsent("A");
-        assertValue("B", "bb", "bbbb");
-        assertValue("C", "c", "c");
+        assertAbsent("a");
+        assertValue("b", "bb", "bbbb");
+        assertValue("c", "c", "c");
 
         // causing the size to grow to 10 should evict nothing
-        set("D", "d", "d");
+        set("d", "d", "d");
         cache.flush();
         assertEquals(10, cache.size());
-        assertAbsent("A");
-        assertValue("B", "bb", "bbbb");
-        assertValue("C", "c", "c");
-        assertValue("D", "d", "d");
+        assertAbsent("a");
+        assertValue("b", "bb", "bbbb");
+        assertValue("c", "c", "c");
+        assertValue("d", "d", "d");
 
         // causing the size to grow to 18 should evict 'B' and 'C'
-        set("E", "eeee", "eeee");
+        set("e", "eeee", "eeee");
         cache.flush();
         assertEquals(10, cache.size());
-        assertAbsent("A");
-        assertAbsent("B");
-        assertAbsent("C");
-        assertValue("D", "d", "d");
-        assertValue("E", "eeee", "eeee");
+        assertAbsent("a");
+        assertAbsent("b");
+        assertAbsent("c");
+        assertValue("d", "d", "d");
+        assertValue("e", "eeee", "eeee");
     }
 
     public void testEvictOnUpdate() throws Exception {
         cache.close();
         cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
 
-        set("A", "a", "aa"); // size 3
-        set("B", "b", "bb"); // size 3
-        set("C", "c", "cc"); // size 3
+        set("a", "a", "aa"); // size 3
+        set("b", "b", "bb"); // size 3
+        set("c", "c", "cc"); // size 3
         assertEquals(9, cache.size());
 
         // causing the size to grow to 11 should evict 'A'
-        set("B", "b", "bbbb");
+        set("b", "b", "bbbb");
         cache.flush();
         assertEquals(8, cache.size());
-        assertAbsent("A");
-        assertValue("B", "b", "bbbb");
-        assertValue("C", "c", "cc");
+        assertAbsent("a");
+        assertValue("b", "b", "bbbb");
+        assertValue("c", "c", "cc");
     }
 
     public void testEvictionHonorsLruFromCurrentSession() throws Exception {
         cache.close();
         cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
-        set("A", "a", "a");
-        set("B", "b", "b");
-        set("C", "c", "c");
-        set("D", "d", "d");
-        set("E", "e", "e");
-        cache.get("B").close(); // 'B' is now least recently used
+        set("a", "a", "a");
+        set("b", "b", "b");
+        set("c", "c", "c");
+        set("d", "d", "d");
+        set("e", "e", "e");
+        cache.get("b").close(); // 'B' is now least recently used
 
         // causing the size to grow to 12 should evict 'A'
-        set("F", "f", "f");
+        set("f", "f", "f");
         // causing the size to grow to 12 should evict 'C'
-        set("G", "g", "g");
+        set("g", "g", "g");
         cache.flush();
         assertEquals(10, cache.size());
-        assertAbsent("A");
-        assertValue("B", "b", "b");
-        assertAbsent("C");
-        assertValue("D", "d", "d");
-        assertValue("E", "e", "e");
-        assertValue("F", "f", "f");
+        assertAbsent("a");
+        assertValue("b", "b", "b");
+        assertAbsent("c");
+        assertValue("d", "d", "d");
+        assertValue("e", "e", "e");
+        assertValue("f", "f", "f");
     }
 
     public void testEvictionHonorsLruFromPreviousSession() throws Exception {
-        set("A", "a", "a");
-        set("B", "b", "b");
-        set("C", "c", "c");
-        set("D", "d", "d");
-        set("E", "e", "e");
-        set("F", "f", "f");
-        cache.get("B").close(); // 'B' is now least recently used
+        set("a", "a", "a");
+        set("b", "b", "b");
+        set("c", "c", "c");
+        set("d", "d", "d");
+        set("e", "e", "e");
+        set("f", "f", "f");
+        cache.get("b").close(); // 'B' is now least recently used
         assertEquals(12, cache.size());
         cache.close();
         cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
 
-        set("G", "g", "g");
+        set("g", "g", "g");
         cache.flush();
         assertEquals(10, cache.size());
-        assertAbsent("A");
-        assertValue("B", "b", "b");
-        assertAbsent("C");
-        assertValue("D", "d", "d");
-        assertValue("E", "e", "e");
-        assertValue("F", "f", "f");
-        assertValue("G", "g", "g");
+        assertAbsent("a");
+        assertValue("b", "b", "b");
+        assertAbsent("c");
+        assertValue("d", "d", "d");
+        assertValue("e", "e", "e");
+        assertValue("f", "f", "f");
+        assertValue("g", "g", "g");
     }
 
     public void testCacheSingleEntryOfSizeGreaterThanMaxSize() throws Exception {
         cache.close();
         cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
-        set("A", "aaaaa", "aaaaaa"); // size=11
+        set("a", "aaaaa", "aaaaaa"); // size=11
         cache.flush();
-        assertAbsent("A");
+        assertAbsent("a");
     }
 
     public void testCacheSingleValueOfSizeGreaterThanMaxSize() throws Exception {
         cache.close();
         cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
-        set("A", "aaaaaaaaaaa", "a"); // size=12
+        set("a", "aaaaaaaaaaa", "a"); // size=12
         cache.flush();
-        assertAbsent("A");
+        assertAbsent("a");
     }
 
     public void testConstructorDoesNotAllowZeroCacheSize() throws Exception {
@@ -509,24 +564,24 @@ public final class DiskLruCacheTest extends TestCase {
     }
 
     public void testRemoveAbsentElement() throws Exception {
-        cache.remove("A");
+        cache.remove("a");
     }
 
     public void testReadingTheSameStreamMultipleTimes() throws Exception {
-        set("A", "a", "b");
-        DiskLruCache.Snapshot snapshot = cache.get("A");
+        set("a", "a", "b");
+        DiskLruCache.Snapshot snapshot = cache.get("a");
         assertSame(snapshot.getInputStream(0), snapshot.getInputStream(0));
         snapshot.close();
     }
 
     public void testRebuildJournalOnRepeatedReads() throws Exception {
-        set("A", "a", "a");
-        set("B", "b", "b");
+        set("a", "a", "a");
+        set("b", "b", "b");
         long lastJournalLength = 0;
         while (true) {
             long journalLength = journalFile.length();
-            assertValue("A", "a", "a");
-            assertValue("B", "b", "b");
+            assertValue("a", "a", "a");
+            assertValue("b", "b", "b");
             if (journalLength < lastJournalLength) {
                 System.out.printf("Journal compacted from %s bytes to %s bytes\n",
                         lastJournalLength, journalLength);
@@ -540,8 +595,8 @@ public final class DiskLruCacheTest extends TestCase {
         long lastJournalLength = 0;
         while (true) {
             long journalLength = journalFile.length();
-            set("A", "a", "a");
-            set("B", "b", "b");
+            set("a", "a", "a");
+            set("b", "b", "b");
             if (journalLength < lastJournalLength) {
                 System.out.printf("Journal compacted from %s bytes to %s bytes\n",
                         lastJournalLength, journalLength);
@@ -551,24 +606,24 @@ public final class DiskLruCacheTest extends TestCase {
         }
 
         // sanity check that a rebuilt journal behaves normally
-        assertValue("A", "a", "a");
-        assertValue("B", "b", "b");
+        assertValue("a", "a", "a");
+        assertValue("b", "b", "b");
     }
 
     public void testOpenCreatesDirectoryIfNecessary() throws Exception {
         cache.close();
         File dir = new File(javaTmpDir, "testOpenCreatesDirectoryIfNecessary");
         cache = DiskLruCache.open(dir, appVersion, 2, Integer.MAX_VALUE);
-        set("A", "a", "a");
-        assertTrue(new File(dir, "A.0").exists());
-        assertTrue(new File(dir, "A.1").exists());
+        set("a", "a", "a");
+        assertTrue(new File(dir, "a.0").exists());
+        assertTrue(new File(dir, "a.1").exists());
         assertTrue(new File(dir, "journal").exists());
     }
 
     public void testFileDeletedExternally() throws Exception {
-        set("A", "a", "a");
-        getCleanFile("A", 1).delete();
-        assertNull(cache.get("A"));
+        set("a", "a", "a");
+        getCleanFile("a", 1).delete();
+        assertNull(cache.get("a"));
     }
 
     /*public void testFileBecomesInaccessibleDuringReadResultsInIoException() throws Exception {
@@ -601,29 +656,29 @@ public final class DiskLruCacheTest extends TestCase {
     }*/
 
     public void testEditSameVersion() throws Exception {
-        set("A", "a", "a");
-        DiskLruCache.Snapshot snapshot = cache.get("A");
+        set("a", "a", "a");
+        DiskLruCache.Snapshot snapshot = cache.get("a");
         DiskLruCache.Editor editor = snapshot.edit();
         editor.set(1, "a2");
         editor.commit();
-        assertValue("A", "a", "a2");
+        assertValue("a", "a", "a2");
     }
 
     public void testEditSnapshotAfterChangeAborted() throws Exception {
-        set("A", "a", "a");
-        DiskLruCache.Snapshot snapshot = cache.get("A");
+        set("a", "a", "a");
+        DiskLruCache.Snapshot snapshot = cache.get("a");
         DiskLruCache.Editor toAbort = snapshot.edit();
         toAbort.set(0, "b");
         toAbort.abort();
         DiskLruCache.Editor editor = snapshot.edit();
         editor.set(1, "a2");
         editor.commit();
-        assertValue("A", "a", "a2");
+        assertValue("a", "a", "a2");
     }
 
     public void testEditSnapshotAfterChangeCommitted() throws Exception {
-        set("A", "a", "a");
-        DiskLruCache.Snapshot snapshot = cache.get("A");
+        set("a", "a", "a");
+        DiskLruCache.Snapshot snapshot = cache.get("a");
         DiskLruCache.Editor toAbort = snapshot.edit();
         toAbort.set(0, "b");
         toAbort.commit();
@@ -633,10 +688,10 @@ public final class DiskLruCacheTest extends TestCase {
     public void testEditSinceEvicted() throws Exception {
         cache.close();
         cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
-        set("A", "aa", "aaa"); // size 5
-        DiskLruCache.Snapshot snapshot = cache.get("A");
-        set("B", "bb", "bbb"); // size 5
-        set("C", "cc", "ccc"); // size 5; will evict 'A'
+        set("a", "aa", "aaa"); // size 5
+        DiskLruCache.Snapshot snapshot = cache.get("a");
+        set("b", "bb", "bbb"); // size 5
+        set("c", "cc", "ccc"); // size 5; will evict 'A'
         cache.flush();
         assertNull(snapshot.edit());
     }
@@ -644,11 +699,11 @@ public final class DiskLruCacheTest extends TestCase {
     public void testEditSinceEvictedAndRecreated() throws Exception {
         cache.close();
         cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
-        set("A", "aa", "aaa"); // size 5
-        DiskLruCache.Snapshot snapshot = cache.get("A");
-        set("B", "bb", "bbb"); // size 5
-        set("C", "cc", "ccc"); // size 5; will evict 'A'
-        set("A", "a", "aaaa"); // size 5; will evict 'B'
+        set("a", "aa", "aaa"); // size 5
+        DiskLruCache.Snapshot snapshot = cache.get("a");
+        set("b", "bb", "bbb"); // size 5
+        set("c", "cc", "ccc"); // size 5; will evict 'A'
+        set("a", "a", "aaaa"); // size 5; will evict 'B'
         cache.flush();
         assertNull(snapshot.edit());
     }
