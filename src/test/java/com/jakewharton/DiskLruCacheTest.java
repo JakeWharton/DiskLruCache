@@ -80,6 +80,21 @@ public final class DiskLruCacheTest extends TestCase {
         assertEquals("DE", snapshot.getString(1));
     }
 
+    public void testWriteAndReadEncodedEntry() throws Exception {
+        DiskLruCache.Editor creator = cache.edit("https://graph.facebook.com/me");
+        creator.set(0, "{ME!}");
+        creator.set(1, "{profile}");
+        assertNull(creator.getString(0));
+        assertNull(creator.newInputStream(0));
+        assertNull(creator.getString(1));
+        assertNull(creator.newInputStream(1));
+        creator.commit();
+
+        DiskLruCache.Snapshot snapshot = cache.get("https://graph.facebook.com/me");
+        assertEquals("{ME!}", snapshot.getString(0));
+        assertEquals("{profile}", snapshot.getString(1));
+    }
+
     public void testReadAndWriteEntryAcrossCacheOpenAndClose() throws Exception {
         DiskLruCache.Editor creator = cache.edit("k1");
         creator.set(0, "A");

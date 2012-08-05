@@ -33,8 +33,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Array;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -886,7 +888,11 @@ public final class DiskLruCache implements Closeable {
         private long sequenceNumber;
 
         private Entry(String key) {
-            this.key = key;
+            try  {
+                this.key = URLEncoder.encode(key, UTF_8.name());
+            } catch (UnsupportedEncodingException uee) {
+                throw new AssertionError(uee.getMessage());
+            }
             this.lengths = new long[valueCount];
         }
 
