@@ -2,11 +2,9 @@ Disk LRU Cache
 ==============
 
 A cache that uses a bounded amount of space on a filesystem. Each cache entry
-has a string key and a fixed number of values. Values are byte sequences,
-accessible as streams or files. Each value must be between `0` and
-`Integer.MAX_VALUE` bytes in length.
-
-The cache keys must match the regex `[a-z0-9_]{1,64}`.
+has a string key and a fixed number of values. Each key must match the regex
+`[a-z0-9_]{1,64}`.  Values are byte sequences, accessible as streams or files.
+Each value must be between `0` and `Integer.MAX_VALUE` bytes in length.
 
 The cache stores its data in a directory on the filesystem. This directory must
 be exclusive to the cache; the cache may delete or overwrite files from its
