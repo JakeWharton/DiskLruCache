@@ -771,6 +771,7 @@ public final class DiskLruCache implements Closeable {
     public final class Editor {
         private final Entry entry;
         private boolean hasErrors;
+        private boolean committed;
 
         private Editor(Entry entry) {
             this.entry = entry;
@@ -849,6 +850,7 @@ public final class DiskLruCache implements Closeable {
             } else {
                 completeEdit(this, true);
             }
+            committed = true;
         }
 
         /**
@@ -857,6 +859,15 @@ public final class DiskLruCache implements Closeable {
          */
         public void abort() throws IOException {
             completeEdit(this, false);
+        }
+
+        public void abortUnlessCommitted() {
+            if (!committed) {
+                try {
+                    abort();
+                } catch (IOException ignored) {
+                }
+            }
         }
 
         private class FaultHidingOutputStream extends FilterOutputStream {
