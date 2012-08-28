@@ -54,11 +54,13 @@ If you are a Maven user you can also add this library as a dependency since it
 it distributed to the central repositories. Simply add the following to your
 `pom.xml`:
 
-    <dependency>
-        <groupId>com.jakewharton</groupId>
-        <artifactId>disklrucache</artifactId>
-        <version>1.1.0</version>
-    </dependency>
+```xml
+<dependency>
+    <groupId>com.jakewharton</groupId>
+    <artifactId>disklrucache</artifactId>
+    <version>1.1.0</version>
+</dependency>
+```
 
 If you would like to compile your own version, the library can be built by
 running `mvn clean package`. The output JAR will be in the `target/` directory.
