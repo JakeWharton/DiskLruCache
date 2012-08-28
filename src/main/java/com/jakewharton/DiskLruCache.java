@@ -319,7 +319,7 @@ public final class DiskLruCache implements Closeable {
     }
 
     private void readJournal() throws IOException {
-        InputStream in = new BufferedInputStream(new FileInputStream(journalFile));
+        InputStream in = new BufferedInputStream(new FileInputStream(journalFile), 8192);
         try {
             String magic = /*Streams.*/readAsciiLine(in);
             String version = /*Streams.*/readAsciiLine(in);
