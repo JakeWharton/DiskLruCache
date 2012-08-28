@@ -710,7 +710,7 @@ public final class DiskLruCacheTest extends TestCase {
     }
 
     /**
-     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a>
+     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a>
      * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
      **/
     public void testAggressiveClearingHandlesWrite() throws Exception {
@@ -719,7 +719,7 @@ public final class DiskLruCacheTest extends TestCase {
     }
 
     /**
-     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a>
+     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a>
      * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
      **/
     public void testAggressiveClearingHandlesEdit() throws Exception {
@@ -731,7 +731,7 @@ public final class DiskLruCacheTest extends TestCase {
     }
 
     /**
-     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2}">Issue #2</a>
+     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a>
      * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
      **/
     public void testAggressiveClearingHandlesRead() throws Exception {
