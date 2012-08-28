@@ -715,7 +715,7 @@ public final class DiskLruCacheTest extends TestCase {
      **/
     public void testAggressiveClearingHandlesWrite() throws Exception {
         FileUtils.deleteDirectory(cacheDir);
-        set("A", "a", "a");
+        set("a", "a", "a");
     }
 
     /**
@@ -723,8 +723,8 @@ public final class DiskLruCacheTest extends TestCase {
      * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
      **/
     public void testAggressiveClearingHandlesEdit() throws Exception {
-        set("A", "a", "a");
-        DiskLruCache.Editor a = cache.get("A").edit();
+        set("a", "a", "a");
+        DiskLruCache.Editor a = cache.get("a").edit();
         FileUtils.deleteDirectory(cacheDir);
         a.set(1, "a2");
         a.commit();
@@ -736,7 +736,7 @@ public final class DiskLruCacheTest extends TestCase {
      **/
     public void testAggressiveClearingHandlesRead() throws Exception {
         FileUtils.deleteDirectory(cacheDir);
-        assertNull(cache.get("A"));
+        assertNull(cache.get("a"));
     }
 
     private void assertJournalEquals(String... expectedBodyLines) throws Exception {
