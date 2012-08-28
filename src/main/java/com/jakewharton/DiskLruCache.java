@@ -42,7 +42,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -234,7 +233,7 @@ public final class DiskLruCache implements Closeable {
     private final File journalFile;
     private final File journalFileTmp;
     private final int appVersion;
-    private final long maxSize;
+    private long maxSize;
     private final int valueCount;
     private long size = 0;
     private Writer journalWriter;
@@ -250,7 +249,7 @@ public final class DiskLruCache implements Closeable {
     private long nextSequenceNumber = 0;
 
     /** This cache uses a single background thread to evict entries. */
-    private final ExecutorService executorService = new ThreadPoolExecutor(0, 1,
+    final ThreadPoolExecutor executorService = new ThreadPoolExecutor(0, 1,
             60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
     private final Callable<Void> cleanupCallable = new Callable<Void>() {
         @Override public Void call() throws Exception {
@@ -531,8 +530,17 @@ public final class DiskLruCache implements Closeable {
      * Returns the maximum number of bytes that this cache should use to store
      * its data.
      */
-    public long maxSize() {
+    public long getMaxSize() {
         return maxSize;
+    }
+
+    /**
+     * Changes the maximum number of bytes the cache can store and queues a job
+     * to trim the existing store, if necessary.
+     */
+    public synchronized void setMaxSize(long maxSize) {
+        this.maxSize = maxSize;
+        executorService.submit(cleanupCallable);
     }
 
     /**
