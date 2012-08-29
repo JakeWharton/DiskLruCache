@@ -16,6 +16,9 @@
 
 package com.jakewharton;
 
+import junit.framework.TestCase;
+import org.apache.commons.io.FileUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -27,8 +30,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
-import junit.framework.TestCase;
+
 import static com.jakewharton.DiskLruCache.JOURNAL_FILE;
 import static com.jakewharton.DiskLruCache.MAGIC;
 import static com.jakewharton.DiskLruCache.VERSION_1;
@@ -428,6 +430,27 @@ public final class DiskLruCacheTest extends TestCase {
         assertEquals("C", snapshot.getString(0));
         assertEquals("B", snapshot.getString(1));
         snapshot.close();
+    }
+
+    public void testGrowMaxSize() throws Exception {
+        cache.close();
+        cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+        set("a", "a", "aaa"); // size 4
+        set("b", "bb", "bbbb"); // size 6
+        cache.setMaxSize(20);
+        set("c", "c", "c"); // size 12
+        assertEquals(12, cache.size());
+    }
+
+    public void testShrinkMaxSizeEvicts() throws Exception {
+        cache.close();
+        cache = DiskLruCache.open(cacheDir, appVersion, 2, 20);
+        set("a", "a", "aaa"); // size 4
+        set("b", "bb", "bbbb"); // size 6
+        set("c", "c", "c"); // size 12
+        cache.setMaxSize(10);
+        assertEquals(1, cache.executorService.getTaskCount());
+        cache.executorService.purge();
     }
 
     public void testEvictOnInsert() throws Exception {
