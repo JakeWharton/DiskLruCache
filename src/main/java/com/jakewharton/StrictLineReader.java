@@ -41,10 +41,7 @@ import java.nio.charset.Charset;
  * We currently check in constructor that the charset is one of US-ASCII, UTF-8 and ISO-8859-1.
  * The default charset is US_ASCII.
  */
-public class StrictLineReader implements Closeable {
-    static final Charset US_ASCII = Charset.forName("US-ASCII");
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
-    private static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
+class StrictLineReader implements Closeable {
     private static final byte CR = (byte)'\r';
     private static final byte LF = (byte)'\n';
 
@@ -114,8 +111,7 @@ public class StrictLineReader implements Closeable {
         if (capacity < 0) {
             throw new IllegalArgumentException("capacity <= 0");
         }
-        if (!(charset.equals(US_ASCII) || charset.equals(UTF_8) ||
-                charset.equals(ISO_8859_1))) {
+        if (!(charset.equals(Charsets.US_ASCII))) {
             throw new IllegalArgumentException("Unsupported encoding");
         }
 

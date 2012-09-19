@@ -30,11 +30,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Array;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -118,52 +115,6 @@ public final class DiskLruCache implements Closeable {
         T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), resultLength);
         System.arraycopy(original, start, result, 0, copyLength);
         return result;
-    }
-
-    /* XXX From java.nio.charset.Charsets */
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
-
-    /* XXX From libcore.io.IoUtils */
-    private static void deleteContents(File dir) throws IOException {
-        File[] files = dir.listFiles();
-        if (files == null) {
-            throw new IllegalArgumentException("not a directory: " + dir);
-        }
-        for (File file : files) {
-            if (file.isDirectory()) {
-                deleteContents(file);
-            }
-            if (!file.delete()) {
-                throw new IOException("failed to delete file: " + file);
-            }
-        }
-    }
-
-    /* XXX From libcore.io.IoUtils */
-    private static void closeQuietly(/*Auto*/Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (RuntimeException rethrown) {
-                throw rethrown;
-            } catch (Exception ignored) {
-            }
-        }
-    }
-
-    /* XXX From libcore.io.Streams */
-    private static String readFully(Reader reader) throws IOException {
-        try {
-            StringWriter writer = new StringWriter();
-            char[] buffer = new char[1024];
-            int count;
-            while ((count = reader.read(buffer)) != -1) {
-                writer.write(buffer, 0, count);
-            }
-            return writer.toString();
-        } finally {
-            reader.close();
-        }
     }
 
     /*
@@ -295,7 +246,8 @@ public final class DiskLruCache implements Closeable {
     }
 
     private void readJournal() throws IOException {
-        StrictLineReader reader = new StrictLineReader(new FileInputStream(journalFile), StrictLineReader.US_ASCII);
+        StrictLineReader reader = new StrictLineReader(new FileInputStream(journalFile),
+                Charsets.US_ASCII);
         try {
             String magic = reader.readLine();
             String version = reader.readLine();
@@ -319,7 +271,7 @@ public final class DiskLruCache implements Closeable {
                 }
             }
         } finally {
-            /*IoUtils.*/closeQuietly(reader);
+            IoUtils.closeQuietly(reader);
         }
     }
 
@@ -680,7 +632,7 @@ public final class DiskLruCache implements Closeable {
      */
     public void delete() throws IOException {
         close();
-        /*IoUtils.*/deleteContents(directory);
+        IoUtils.deleteContents(directory);
     }
 
     private void validateKey(String key) {
@@ -692,7 +644,7 @@ public final class DiskLruCache implements Closeable {
     }
 
     private static String inputStreamToString(InputStream in) throws IOException {
-        return /*Streams.*/readFully(new InputStreamReader(in, /*Charsets.*/UTF_8));
+        return Streams.readFully(new InputStreamReader(in, Charsets.UTF_8));
     }
 
     /**
@@ -734,7 +686,7 @@ public final class DiskLruCache implements Closeable {
 
         public void close() {
             for (InputStream in : ins) {
-                /*IoUtils.*/closeQuietly(in);
+                IoUtils.closeQuietly(in);
             }
         }
     }
@@ -818,10 +770,10 @@ public final class DiskLruCache implements Closeable {
         public void set(int index, String value) throws IOException {
             Writer writer = null;
             try {
-                writer = new OutputStreamWriter(newOutputStream(index), /*Charsets.*/UTF_8);
+                writer = new OutputStreamWriter(newOutputStream(index), Charsets.UTF_8);
                 writer.write(value);
             } finally {
-                /*IoUtils.*/closeQuietly(writer);
+                IoUtils.closeQuietly(writer);
             }
         }
 
