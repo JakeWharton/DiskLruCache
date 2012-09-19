@@ -16,7 +16,6 @@
 
 package com.jakewharton;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.EOFException;
@@ -167,28 +166,6 @@ public final class DiskLruCache implements Closeable {
         }
     }
 
-    /* XXX From libcore.io.Streams */
-    private static String readAsciiLine(InputStream in) throws IOException {
-        // TODO: support UTF-8 here instead
-
-        StringBuilder result = new StringBuilder(80);
-        while (true) {
-            int c = in.read();
-            if (c == -1) {
-                throw new EOFException();
-            } else if (c == '\n') {
-                break;
-            }
-
-            result.append((char) c);
-        }
-        int length = result.length();
-        if (length > 0 && result.charAt(length - 1) == '\r') {
-            result.setLength(length - 1);
-        }
-        return result.toString();
-    }
-
     /*
      * This cache uses a journal file named "journal". A typical journal file
      * looks like this:
@@ -318,13 +295,13 @@ public final class DiskLruCache implements Closeable {
     }
 
     private void readJournal() throws IOException {
-        InputStream in = new BufferedInputStream(new FileInputStream(journalFile), 8192);
+        StrictLineReader reader = new StrictLineReader(new FileInputStream(journalFile), StrictLineReader.US_ASCII);
         try {
-            String magic = /*Streams.*/readAsciiLine(in);
-            String version = /*Streams.*/readAsciiLine(in);
-            String appVersionString = /*Streams.*/readAsciiLine(in);
-            String valueCountString = /*Streams.*/readAsciiLine(in);
-            String blank = /*Streams.*/readAsciiLine(in);
+            String magic = reader.readLine();
+            String version = reader.readLine();
+            String appVersionString = reader.readLine();
+            String valueCountString = reader.readLine();
+            String blank = reader.readLine();
             if (!MAGIC.equals(magic)
                     || !VERSION_1.equals(version)
                     || !Integer.toString(appVersion).equals(appVersionString)
@@ -336,13 +313,13 @@ public final class DiskLruCache implements Closeable {
 
             while (true) {
                 try {
-                    readJournalLine(/*Streams.*/readAsciiLine(in));
+                    readJournalLine(reader.readLine());
                 } catch (EOFException endOfJournal) {
                     break;
                 }
             }
         } finally {
-            /*IoUtils.*/closeQuietly(in);
+            /*IoUtils.*/closeQuietly(reader);
         }
     }
 
