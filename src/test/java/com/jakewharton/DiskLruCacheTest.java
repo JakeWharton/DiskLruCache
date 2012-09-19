@@ -732,19 +732,14 @@ public final class DiskLruCacheTest extends TestCase {
         assertNull(snapshot.edit());
     }
 
-    /**
-     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a>
-     * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
-     **/
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a> */
     public void testAggressiveClearingHandlesWrite() throws Exception {
         FileUtils.deleteDirectory(cacheDir);
         set("a", "a", "a");
+        assertNull(cache.get("a"));
     }
 
-    /**
-     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a>
-     * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
-     **/
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a> */
     public void testAggressiveClearingHandlesEdit() throws Exception {
         set("a", "a", "a");
         DiskLruCache.Editor a = cache.get("a").edit();
@@ -753,10 +748,19 @@ public final class DiskLruCacheTest extends TestCase {
         a.commit();
     }
 
-    /**
-     * @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a>
-     * @see <a href="https://android-review.googlesource.com/31430">Change Ied6a3d8a</a>
-     **/
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a> */
+    public void testAggressiveClearingHandlesPartialEdit() throws Exception {
+        set("a", "a", "a");
+        set("b", "b", "b");
+        DiskLruCache.Editor a = cache.get("a").edit();
+        a.set(1, "a1");
+        FileUtils.deleteDirectory(cacheDir);
+        a.set(2, "a2");
+        a.commit();
+        assertNull(cache.get("a"));
+    }
+
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a> */
     public void testAggressiveClearingHandlesRead() throws Exception {
         FileUtils.deleteDirectory(cacheDir);
         assertNull(cache.get("a"));

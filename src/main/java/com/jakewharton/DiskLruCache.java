@@ -559,21 +559,17 @@ public final class DiskLruCache implements Closeable {
         }
 
         // if this edit is creating the entry for the first time, every index must have a value
-        int invalid = 0;
         if (success && !entry.readable) {
             for (int i = 0; i < valueCount; i++) {
+                if (!editor.written[i]) {
+                    editor.abort();
+                    throw new IllegalStateException("Newly created entry didn't create value for index " + i);
+                }
                 if (!entry.getDirtyFile(i).exists()) {
-                    invalid += 1;
+                    editor.abort();
+                    return;
                 }
             }
-        }
-        if (invalid > 0) {
-            editor.abort();
-            if (invalid == valueCount) {
-                //All writes failed, return silently
-                return;
-            }
-            throw new IllegalStateException("edit didn't create " + invalid + " files");
         }
 
         for (int i = 0; i < valueCount; i++) {
@@ -778,11 +774,13 @@ public final class DiskLruCache implements Closeable {
      */
     public final class Editor {
         private final Entry entry;
+        private final boolean[] written;
         private boolean hasErrors;
         private boolean committed;
 
         private Editor(Entry entry) {
             this.entry = entry;
+            this.written = (entry.readable) ? null : new boolean[valueCount];
         }
 
         /**
@@ -825,6 +823,9 @@ public final class DiskLruCache implements Closeable {
             synchronized (DiskLruCache.this) {
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
+                }
+                if (!entry.readable) {
+                  written[index] = true;
                 }
                 try {
                     return new FaultHidingOutputStream(new FileOutputStream(entry.getDirtyFile(index)));
