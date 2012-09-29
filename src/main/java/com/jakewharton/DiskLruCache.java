@@ -31,7 +31,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -99,23 +98,6 @@ public final class DiskLruCache implements Closeable {
     private static final String DIRTY = "DIRTY";
     private static final String REMOVE = "REMOVE";
     private static final String READ = "READ";
-
-    /* XXX From java.util.Arrays */
-    @SuppressWarnings("unchecked")
-    private static <T> T[] copyOfRange(T[] original, int start, int end) {
-        int originalLength = original.length; // For exception priority compatibility.
-        if (start > end) {
-            throw new IllegalArgumentException();
-        }
-        if (start < 0 || start > originalLength) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-        int resultLength = end - start;
-        int copyLength = Math.min(resultLength, originalLength - start);
-        T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), resultLength);
-        System.arraycopy(original, start, result, 0, copyLength);
-        return result;
-    }
 
     /*
      * This cache uses a journal file named "journal". A typical journal file
@@ -296,7 +278,7 @@ public final class DiskLruCache implements Closeable {
         if (parts[0].equals(CLEAN) && parts.length == 2 + valueCount) {
             entry.readable = true;
             entry.currentEditor = null;
-            entry.setLengths(/*Arrays.*/copyOfRange(parts, 2, parts.length));
+            entry.setLengths(Arrays.copyOfRange(parts, 2, parts.length));
         } else if (parts[0].equals(DIRTY) && parts.length == 2) {
             entry.currentEditor = new Editor(entry);
         } else if (parts[0].equals(READ) && parts.length == 2) {
