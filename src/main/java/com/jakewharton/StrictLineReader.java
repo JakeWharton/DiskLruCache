@@ -21,6 +21,7 @@ import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 /**
@@ -159,7 +160,7 @@ class StrictLineReader implements Closeable {
             for (int i = pos; i != end; ++i) {
                 if (buf[i] == LF) {
                     int lineEnd = (i != pos && buf[i - 1] == CR) ? i - 1 : i;
-                    String res = new String(buf, pos, lineEnd - pos, charset);
+                    String res = new String(buf, pos, lineEnd - pos, charset.name());
                     pos = i + 1;
                     return res;
                 }
@@ -170,7 +171,11 @@ class StrictLineReader implements Closeable {
                 @Override
                 public String toString() {
                     int length = (count > 0 && buf[count - 1] == CR) ? count - 1 : count;
-                    return new String(buf, 0, length, charset);
+                    try {
+                        return new String(buf, 0, length, charset.name());
+                    } catch (UnsupportedEncodingException e) {
+                        throw new AssertionError(e); // Since we control the charset this will never happen.
+                    }
                 }
             };
 
