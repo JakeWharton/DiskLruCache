@@ -738,11 +738,23 @@ public final class DiskLruCache implements Closeable {
                 if (!entry.readable) {
                   written[index] = true;
                 }
+                File dirtyFile = entry.getDirtyFile(index);
+                FileOutputStream outputStream;
                 try {
-                    return new FaultHidingOutputStream(new FileOutputStream(entry.getDirtyFile(index)));
+                    outputStream = new FileOutputStream(dirtyFile);
                 } catch (FileNotFoundException e) {
-                    return NULL_OUTPUT_STREAM;
+                    // Attempt to recreate the cache directory and allow reading and writing.
+                    directory.mkdirs();
+                    directory.setReadable(true, false);
+                    directory.setWritable(true, false);
+                    try {
+                      outputStream = new FileOutputStream(dirtyFile);
+                    } catch (FileNotFoundException e2) {
+                      // We are unable to recover. Silently eat the writes.
+                      return NULL_OUTPUT_STREAM;
+                    }
                 }
+                return new FaultHidingOutputStream(outputStream);
             }
         }
 
