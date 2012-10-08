@@ -32,7 +32,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -885,7 +884,7 @@ public final class DiskLruCache implements Closeable {
         }
 
         private IOException invalidLengths(String[] strings) throws IOException {
-            throw new IOException("unexpected journal line: " + Arrays.toString(strings));
+            throw new IOException("unexpected journal line: " + java.util.Arrays.toString(strings));
         }
 
         public File getCleanFile(int i) {
