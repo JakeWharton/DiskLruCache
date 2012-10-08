@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 1.2.1 *(2012-10-08)*
+----------------------------
+
+ * Fix: Ensure library references Java 5-compatible version of
+   `Arrays.copyOfRange`. *(Thanks Edward Dale)*
+
+
 Version 1.2.0 *(2012-09-30)*
 ----------------------------
 
