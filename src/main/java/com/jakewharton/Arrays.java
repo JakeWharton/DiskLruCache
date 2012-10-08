@@ -5,7 +5,7 @@ import java.lang.reflect.Array;
 /* From java.util.Arrays */
 class Arrays {
     @SuppressWarnings("unchecked")
-    private static <T> T[] copyOfRange(T[] original, int start, int end) {
+    static <T> T[] copyOfRange(T[] original, int start, int end) {
         int originalLength = original.length; // For exception priority compatibility.
         if (start > end) {
             throw new IllegalArgumentException();
