@@ -121,9 +121,9 @@ public final class DiskLruCacheTest extends TestCase {
         // contains all valid characters
         key = "abcdefghijklmnopqrstuvwxyz_0123456789";
         cache.edit(key).abort();
-		// contains dash
-		key = "-20384573948576";
-		cache.edit(key).abort();
+        // contains dash
+        key = "-20384573948576";
+        cache.edit(key).abort();
     }
 
     public void testWriteAndReadEntry() throws Exception {
