@@ -75,42 +75,42 @@ public final class DiskLruCacheTest extends TestCase {
             cache.edit(key);
             fail("Exepcting an IllegalArgumentException as the key was invalid.");
         } catch (IllegalArgumentException iae) {
-            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+            assertEquals("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"", iae.getMessage());
         }
         try {
             key = "has_CR\r";
             cache.edit(key);
             fail("Exepcting an IllegalArgumentException as the key was invalid.");
         } catch (IllegalArgumentException iae) {
-            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+            assertEquals("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"", iae.getMessage());
         }
         try {
             key = "has_LF\n";
             cache.edit(key);
             fail("Exepcting an IllegalArgumentException as the key was invalid.");
         } catch (IllegalArgumentException iae) {
-            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+            assertEquals("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"", iae.getMessage());
         }
         try {
             key = "has_invalid/";
             cache.edit(key);
             fail("Exepcting an IllegalArgumentException as the key was invalid.");
         } catch (IllegalArgumentException iae) {
-            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+            assertEquals("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"", iae.getMessage());
         }
         try {
             key = "has_invalid\u2603";
             cache.edit(key);
             fail("Exepcting an IllegalArgumentException as the key was invalid.");
         } catch (IllegalArgumentException iae) {
-            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+            assertEquals("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"", iae.getMessage());
         }
         try {
             key = "this_is_way_too_long_this_is_way_too_long_this_is_way_too_long_this_is_way_too_long";
             cache.edit(key);
             fail("Exepcting an IllegalArgumentException as the key was too long.");
         } catch (IllegalArgumentException iae) {
-            assertEquals("keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"", iae.getMessage());
+            assertEquals("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"", iae.getMessage());
         }
 
         // test valid cases
@@ -120,6 +120,9 @@ public final class DiskLruCacheTest extends TestCase {
         cache.edit(key).abort();
         // contains all valid characters
         key = "abcdefghijklmnopqrstuvwxyz_0123456789";
+        cache.edit(key).abort();
+        // contains dash
+        key = "-20384573948576";
         cache.edit(key).abort();
     }
 
