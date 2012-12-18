@@ -45,7 +45,7 @@ import java.util.regex.Pattern;
 /**
  * A cache that uses a bounded amount of space on a filesystem. Each cache
  * entry has a string key and a fixed number of values. Each key must match
- * the regex <strong>[a-z0-9_]{1,64}</strong>. Values are byte sequences,
+ * the regex <strong>[a-z0-9_-]{1,64}</strong>. Values are byte sequences,
  * accessible as streams or files. Each value must be between {@code 0} and
  * {@code Integer.MAX_VALUE} bytes in length.
  *
@@ -92,7 +92,7 @@ public final class DiskLruCache implements Closeable {
     static final String MAGIC = "libcore.io.DiskLruCache";
     static final String VERSION_1 = "1";
     static final long ANY_SEQUENCE_NUMBER = -1;
-    static final Pattern LEGAL_KEY_PATTERN = Pattern.compile("[a-z0-9_]{1,64}");
+    static final Pattern LEGAL_KEY_PATTERN = Pattern.compile("[a-z0-9_-]{1,64}");
     private static final String CLEAN = "CLEAN";
     private static final String DIRTY = "DIRTY";
     private static final String REMOVE = "REMOVE";
@@ -620,7 +620,7 @@ public final class DiskLruCache implements Closeable {
         Matcher matcher = LEGAL_KEY_PATTERN.matcher(key);
         if (!matcher.matches()) {
             throw new IllegalArgumentException(
-                    "keys must match regex [a-z0-9_]{1,64}: \"" + key + "\"");
+                    "keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
         }
     }
 
