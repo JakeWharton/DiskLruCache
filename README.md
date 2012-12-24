@@ -58,7 +58,7 @@ it distributed to the central repositories. Simply add the following to your
 <dependency>
     <groupId>com.jakewharton</groupId>
     <artifactId>disklrucache</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 

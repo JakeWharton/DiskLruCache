@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+Version 1.3.0 *(2012-12-24)*
+----------------------------
+
+ * Re-allow dash in cache key (now `[a-z0-9_-]{1,64}`).
+ * New: `getLength` method on `Snapshot`. *(Thanks Edward Dale)*
+ * Performance improvements reading journal lines.
+
+
 Version 1.2.1 *(2012-10-08)*
 ----------------------------
 
