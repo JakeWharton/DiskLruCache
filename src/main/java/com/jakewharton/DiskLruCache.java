@@ -257,15 +257,22 @@ public final class DiskLruCache implements Closeable {
     }
 
     private void readJournalLine(String line) throws IOException {
-        String[] parts = line.split(" ");
-        if (parts.length < 2) {
+        int firstSpace = line.indexOf(' ');
+        if (firstSpace == -1) {
             throw new IOException("unexpected journal line: " + line);
         }
 
-        String key = parts[1];
-        if (parts[0].equals(REMOVE) && parts.length == 2) {
-            lruEntries.remove(key);
-            return;
+        int keyBegin = firstSpace + 1;
+        int secondSpace = line.indexOf(' ', keyBegin);
+        final String key;
+        if (secondSpace == -1) {
+            key = line.substring(keyBegin);
+            if (firstSpace == REMOVE.length() && line.startsWith(REMOVE)) {
+                lruEntries.remove(key);
+                return;
+            }
+        } else {
+            key = line.substring(keyBegin, secondSpace);
         }
 
         Entry entry = lruEntries.get(key);
@@ -274,13 +281,14 @@ public final class DiskLruCache implements Closeable {
             lruEntries.put(key, entry);
         }
 
-        if (parts[0].equals(CLEAN) && parts.length == 2 + valueCount) {
+        if (secondSpace != -1 && firstSpace == CLEAN.length() && line.startsWith(CLEAN)) {
+            String[] parts = line.substring(secondSpace + 1).split(" ");
             entry.readable = true;
             entry.currentEditor = null;
-            entry.setLengths(Arrays.copyOfRange(parts, 2, parts.length));
-        } else if (parts[0].equals(DIRTY) && parts.length == 2) {
+            entry.setLengths(parts);
+        } else if (secondSpace == -1 && firstSpace == DIRTY.length() && line.startsWith(DIRTY)) {
             entry.currentEditor = new Editor(entry);
-        } else if (parts[0].equals(READ) && parts.length == 2) {
+        } else if (secondSpace == -1 && firstSpace == READ.length() && line.startsWith(READ)) {
             // this work was already done by calling lruEntries.get()
         } else {
             throw new IOException("unexpected journal line: " + line);
