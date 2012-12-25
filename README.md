@@ -48,11 +48,10 @@ appropriately.
 Obtaining
 =========
 
-You can download a JAR of this library on the [GitHub download page][1].
+You can include the library in your project by [downloading the .jar][jar].
 
-If you are a Maven user you can also add this library as a dependency since it
-it distributed to the central repositories. Simply add the following to your
-`pom.xml`:
+If you are a Maven user you can also add this library as a dependency. Add the
+following to your `pom.xml`:
 
 ```xml
 <dependency>
@@ -65,120 +64,6 @@ it distributed to the central repositories. Simply add the following to your
 If you would like to compile your own version, the library can be built by
 running `mvn clean package`. The output JAR will be in the `target/` directory.
 *(Note: this requires Maven be installed)*
-
-
-
-API
-===
-
-__public static DiskLruCache open(File directory, int appVersion, int valueCount, long maxSize)__
-
-Opens the cache in `directory`, creating a cache if none exists there.
-
-*Params:*
-
- * `directory` - a writable directory
- * `appVersion`
- * `valueCount` - the number of values per cache entry. Must be positive.
- * `maxSize` - the maximum number of bytes this cache should use to store
-
-*Throws:*
-
- * `IOException` - if reading or writing the cache directory fails
-
------
-
-__public Snapshot get(String key)__
-
-Returns a snapshot of the entry named `key`, or null if it doesn't exist is
-not currently readable. If a value is returned, it is moved to the head of
-the LRU queue.
-
-*Throws:*
-
- * `IOException`
-
------
-
-__public Editor edit(String key)__
-
-Returns an editor for the entry named `key`, or `null` if another
-edit is in progress.
-
-*Throws:*
-
- * `IOException`
-
------
-
-__public File getDirectory()__
-
-Returns the directory where this cache stores its data.
-
------
-
-__public long maxSize()__
-
-Returns the maximum number of bytes that this cache should use to store its data.
-
------
-
-__public long size()__
-
-Returns the number of bytes currently being used to store the values in
-this cache. This may be greater than the max size if a background deletion
-is pending.
-
------
-
-__public boolean remove(String key)__
-
-Drops the entry for `key` if it exists and can be removed. Entries actively
-being edited cannot be removed.
-
-*Returns:* `true` if an entry was removed
-
-*Throws:*
-
- * `IOException`
-
------
-
-__public boolean isClosed()__
-
-Returns `true` if this cache has been closed.
-
------
-
-__public void flush()__
-
-Force buffered operations to the filesystem.
-
-*Throws:*
-
- * `IOException`
-
------
-
-__public void close()__
-
-Closes this cache. Stored values will remain on the filesystem.
-
-*Throws:*
-
- * `IOException`
-
------
-
-__public void delete()__
-
-Closes the cache and deletes all of its stored values. This will delete all
-files in the cache directory including files that weren't created by the
-cache.
-
-*Throws:*
-
- * `IOException`
 
 
 
@@ -209,4 +94,4 @@ License
 
 
 
- [1]: https://github.com/JakeWharton/DiskLruCache/downloads
+ [jar]: http://search.maven.org/remotecontent?filepath=com/jakewharton/disklrucache/1.3.0/disklrucache-1.3.0.jar
