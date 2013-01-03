@@ -16,9 +16,9 @@
 
 package com.jakewharton;
 
-import junit.framework.TestCase;
-import org.apache.commons.io.FileUtils;
-
+import static com.jakewharton.DiskLruCache.JOURNAL_FILE;
+import static com.jakewharton.DiskLruCache.MAGIC;
+import static com.jakewharton.DiskLruCache.VERSION_1;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -30,10 +30,8 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static com.jakewharton.DiskLruCache.JOURNAL_FILE;
-import static com.jakewharton.DiskLruCache.MAGIC;
-import static com.jakewharton.DiskLruCache.VERSION_1;
+import junit.framework.TestCase;
+import org.apache.commons.io.FileUtils;
 //import tests.io.MockOs;
 
 public final class DiskLruCacheTest extends TestCase {
@@ -644,6 +642,44 @@ public final class DiskLruCacheTest extends TestCase {
         // sanity check that a rebuilt journal behaves normally
         assertValue("a", "a", "a");
         assertValue("b", "b", "b");
+    }
+
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/28">Issue #28</a> */
+    public void testRebuildJournalOnRepeatedReadsWithOpenAndClose() throws Exception {
+        set("a", "a", "a");
+        set("b", "b", "b");
+        long lastJournalLength = 0;
+        while (true) {
+            long journalLength = journalFile.length();
+            assertValue("a", "a", "a");
+            assertValue("b", "b", "b");
+            cache.close();
+            cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+            if (journalLength < lastJournalLength) {
+                System.out.printf("Journal compacted from %s bytes to %s bytes\n",
+                        lastJournalLength, journalLength);
+                break; // test passed!
+            }
+            lastJournalLength = journalLength;
+        }
+    }
+
+    /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/28">Issue #28</a> */
+    public void testRebuildJournalOnRepeatedEditsWithOpenAndClose() throws Exception {
+        long lastJournalLength = 0;
+        while (true) {
+            long journalLength = journalFile.length();
+            set("a", "a", "a");
+            set("b", "b", "b");
+            cache.close();
+            cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+            if (journalLength < lastJournalLength) {
+                System.out.printf("Journal compacted from %s bytes to %s bytes\n",
+                        lastJournalLength, journalLength);
+                break;
+            }
+            lastJournalLength = journalLength;
+        }
     }
 
     public void testOpenCreatesDirectoryIfNecessary() throws Exception {
