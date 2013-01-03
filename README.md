@@ -62,7 +62,7 @@ following to your `pom.xml`:
 ```
 
 If you would like to compile your own version, the library can be built by
-running `mvn clean package`. The output JAR will be in the `target/` directory.
+running `mvn clean verify`. The output JAR will be in the `target/` directory.
 *(Note: this requires Maven be installed)*
 
 
