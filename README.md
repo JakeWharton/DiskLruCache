@@ -57,7 +57,7 @@ following to your `pom.xml`:
 <dependency>
     <groupId>com.jakewharton</groupId>
     <artifactId>disklrucache</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 

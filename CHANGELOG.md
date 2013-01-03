@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 1.3.1 *(2013-01-02)*
+----------------------------
+
+ * Fix: Correct logic around detecting whether a journal rebuild is required.
+   *(Thanks Jonathan Gerbaud)*
+
+
 Version 1.3.0 *(2012-12-24)*
 ----------------------------
 
