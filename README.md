@@ -94,4 +94,4 @@ License
 
 
 
- [jar]: http://search.maven.org/remotecontent?filepath=com/jakewharton/disklrucache/1.3.0/disklrucache-1.3.0.jar
+ [jar]: https://oss.sonatype.org/content/repositories/releases/com/jakewharton/disklrucache/1.3.1/disklrucache-1.3.1.jar
