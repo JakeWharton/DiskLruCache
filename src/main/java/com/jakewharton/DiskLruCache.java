@@ -396,6 +396,13 @@ public final class DiskLruCache implements Closeable {
             }
         } catch (FileNotFoundException e) {
             // a file must have been deleted manually!
+            for (int i = 0; i < valueCount; i++) {
+                if (ins[i] != null) {
+                    IoUtils.closeQuietly(ins[i]);
+                } else {
+                    break;
+                }
+            }
             return null;
         }
 
