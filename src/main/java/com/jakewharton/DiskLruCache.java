@@ -89,6 +89,7 @@ import java.util.regex.Pattern;
 public final class DiskLruCache implements Closeable {
     static final String JOURNAL_FILE = "journal";
     static final String JOURNAL_FILE_TMP = "journal.tmp";
+    static final String JOURNAL_FILE_BKP = "journal.bkp";
     static final String MAGIC = "libcore.io.DiskLruCache";
     static final String VERSION_1 = "1";
     static final long ANY_SEQUENCE_NUMBER = -1;
@@ -141,6 +142,7 @@ public final class DiskLruCache implements Closeable {
     private final File directory;
     private final File journalFile;
     private final File journalFileTmp;
+    private final File journalFileBkp;
     private final int appVersion;
     private long maxSize;
     private final int valueCount;
@@ -181,6 +183,7 @@ public final class DiskLruCache implements Closeable {
         this.appVersion = appVersion;
         this.journalFile = new File(directory, JOURNAL_FILE);
         this.journalFileTmp = new File(directory, JOURNAL_FILE_TMP);
+        this.journalFileBkp = new File(directory, JOURNAL_FILE_BKP);
         this.valueCount = valueCount;
         this.maxSize = maxSize;
     }
@@ -202,6 +205,18 @@ public final class DiskLruCache implements Closeable {
         }
         if (valueCount <= 0) {
             throw new IllegalArgumentException("valueCount <= 0");
+        }
+
+        // if a bkp file exists, use it instead
+        File bkpFile = new File(directory, JOURNAL_FILE_BKP);
+        if (bkpFile.exists()) {
+            File journalFile = new File(directory, JOURNAL_FILE);
+            // if journal file also exists just delete backup file
+            if (journalFile.exists()) {
+                bkpFile.delete();
+            } else {
+                renameTo(bkpFile, journalFile, false);
+            }
         }
 
         // prefer to pick up where we left off
@@ -331,26 +346,34 @@ public final class DiskLruCache implements Closeable {
         }
 
         Writer writer = new BufferedWriter(new FileWriter(journalFileTmp));
-        writer.write(MAGIC);
-        writer.write("\n");
-        writer.write(VERSION_1);
-        writer.write("\n");
-        writer.write(Integer.toString(appVersion));
-        writer.write("\n");
-        writer.write(Integer.toString(valueCount));
-        writer.write("\n");
-        writer.write("\n");
+        try {
+            writer.write(MAGIC);
+            writer.write("\n");
+            writer.write(VERSION_1);
+            writer.write("\n");
+            writer.write(Integer.toString(appVersion));
+            writer.write("\n");
+            writer.write(Integer.toString(valueCount));
+            writer.write("\n");
+            writer.write("\n");
 
-        for (Entry entry : lruEntries.values()) {
-            if (entry.currentEditor != null) {
-                writer.write(DIRTY + ' ' + entry.key + '\n');
-            } else {
-                writer.write(CLEAN + ' ' + entry.key + entry.getLengths() + '\n');
+            for (Entry entry : lruEntries.values()) {
+                if (entry.currentEditor != null) {
+                    writer.write(DIRTY + ' ' + entry.key + '\n');
+                } else {
+                    writer.write(CLEAN + ' ' + entry.key + entry.getLengths() + '\n');
+                }
             }
+        } finally {
+            writer.close();
         }
 
-        writer.close();
-        journalFileTmp.renameTo(journalFile);
+        if (journalFile.exists()) {
+          renameTo(journalFile, journalFileBkp, true);
+        }
+        renameTo(journalFileTmp, journalFile, false);
+        journalFileBkp.delete();
+
         journalWriter = new BufferedWriter(new FileWriter(journalFile, true));
     }
 
@@ -363,6 +386,16 @@ public final class DiskLruCache implements Closeable {
             }
         }*/
         if (file.exists() && !file.delete()) {
+            throw new IOException();
+        }
+    }
+
+    private static void renameTo(File from, File to, boolean deleteDestination)
+            throws IOException {
+        if (deleteDestination) {
+            deleteIfExists(to);
+        }
+        if (!from.renameTo(to)) {
             throw new IOException();
         }
     }
