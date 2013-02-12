@@ -17,6 +17,7 @@
 package com.jakewharton;
 
 import static com.jakewharton.DiskLruCache.JOURNAL_FILE;
+import static com.jakewharton.DiskLruCache.JOURNAL_FILE_BKP;
 import static com.jakewharton.DiskLruCache.MAGIC;
 import static com.jakewharton.DiskLruCache.VERSION_1;
 import java.io.BufferedReader;
@@ -39,6 +40,7 @@ public final class DiskLruCacheTest extends TestCase {
     private String javaTmpDir;
     private File cacheDir;
     private File journalFile;
+    private File journalBkpFile;
     private DiskLruCache cache;
     //private final MockOs mockOs = new MockOs();
 
@@ -48,6 +50,7 @@ public final class DiskLruCacheTest extends TestCase {
         cacheDir = new File(javaTmpDir, "DiskLruCacheTest");
         cacheDir.mkdir();
         journalFile = new File(cacheDir, JOURNAL_FILE);
+        journalBkpFile = new File(cacheDir, JOURNAL_FILE_BKP);
         for (File file : cacheDir.listFiles()) {
             file.delete();
         }
@@ -680,6 +683,64 @@ public final class DiskLruCacheTest extends TestCase {
             }
             lastJournalLength = journalLength;
         }
+    }
+
+    public void testRestoreBackupFile() throws Exception {
+        DiskLruCache.Editor creator = cache.edit("k1");
+        creator.set(0, "ABC");
+        creator.set(1, "DE");
+        creator.commit();
+        cache.close();
+
+        assertTrue(journalFile.renameTo(journalBkpFile));
+        assertFalse(journalFile.exists());
+
+        cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+
+        DiskLruCache.Snapshot snapshot = cache.get("k1");
+        assertEquals("ABC", snapshot.getString(0));
+        assertEquals(3, snapshot.getLength(0));
+        assertEquals("DE", snapshot.getString(1));
+        assertEquals(2, snapshot.getLength(1));
+
+        assertFalse(journalBkpFile.exists());
+        assertTrue(journalFile.exists());
+    }
+
+    public void testJournalFileIsPreferredOverBackupFile() throws Exception {
+        DiskLruCache.Editor creator = cache.edit("k1");
+        creator.set(0, "ABC");
+        creator.set(1, "DE");
+        creator.commit();
+        cache.flush();
+
+        FileUtils.copyFile(journalFile, journalBkpFile);
+
+        creator = cache.edit("k2");
+        creator.set(0, "F");
+        creator.set(1, "GH");
+        creator.commit();
+        cache.close();
+
+        assertTrue(journalFile.exists());
+        assertTrue(journalBkpFile.exists());
+
+        cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+
+        DiskLruCache.Snapshot snapshotA = cache.get("k1");
+        assertEquals("ABC", snapshotA.getString(0));
+        assertEquals(3, snapshotA.getLength(0));
+        assertEquals("DE", snapshotA.getString(1));
+        assertEquals(2, snapshotA.getLength(1));
+
+        DiskLruCache.Snapshot snapshotB = cache.get("k2");
+        assertEquals("F", snapshotB.getString(0));
+        assertEquals(1, snapshotB.getLength(0));
+        assertEquals("GH", snapshotB.getString(1));
+        assertEquals(2, snapshotB.getLength(1));
+
+        assertFalse(journalBkpFile.exists());
+        assertTrue(journalFile.exists());
     }
 
     public void testOpenCreatesDirectoryIfNecessary() throws Exception {
