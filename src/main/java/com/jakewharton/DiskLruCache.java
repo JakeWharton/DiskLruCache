@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -225,7 +224,8 @@ public final class DiskLruCache implements Closeable {
             try {
                 cache.readJournal();
                 cache.processJournal();
-                cache.journalWriter = new BufferedWriter(new FileWriter(cache.journalFile, true));
+                cache.journalWriter = new BufferedWriter(new OutputStreamWriter(
+                        new FileOutputStream(cache.journalFile, true), Charsets.US_ASCII));
                 return cache;
             } catch (IOException journalIsCorrupt) {
                 System.out.println("DiskLruCache " + directory + " is corrupt: "
@@ -345,7 +345,8 @@ public final class DiskLruCache implements Closeable {
             journalWriter.close();
         }
 
-        Writer writer = new BufferedWriter(new FileWriter(journalFileTmp));
+        Writer writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(journalFileTmp), Charsets.US_ASCII));
         try {
             writer.write(MAGIC);
             writer.write("\n");
@@ -374,7 +375,8 @@ public final class DiskLruCache implements Closeable {
         renameTo(journalFileTmp, journalFile, false);
         journalFileBkp.delete();
 
-        journalWriter = new BufferedWriter(new FileWriter(journalFile, true));
+        journalWriter = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(journalFile, true), Charsets.US_ASCII));
     }
 
     private static void deleteIfExists(File file) throws IOException {
