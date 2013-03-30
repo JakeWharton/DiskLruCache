@@ -160,6 +160,23 @@ public final class DiskLruCacheTest extends TestCase {
         snapshot.close();
     }
 
+    public void testReadAndWriteEntryWithoutProperClose() throws Exception {
+        DiskLruCache.Editor creator = cache.edit("k1");
+        creator.set(0, "A");
+        creator.set(1, "B");
+        creator.commit();
+
+        // Simulate a dirty close of 'cache' by opening the cache directory again.
+        DiskLruCache cache2 = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+        DiskLruCache.Snapshot snapshot = cache2.get("k1");
+        assertEquals("A", snapshot.getString(0));
+        assertEquals(1, snapshot.getLength(0));
+        assertEquals("B", snapshot.getString(1));
+        assertEquals(1, snapshot.getLength(1));
+        snapshot.close();
+        cache2.close();
+    }
+
     public void testJournalWithEditAndPublish() throws Exception {
         DiskLruCache.Editor creator = cache.edit("k1");
         assertJournalEquals("DIRTY k1"); // DIRTY must always be flushed
