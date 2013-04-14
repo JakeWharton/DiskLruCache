@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+Version 1.4.0 *(2013-04-13)*
+----------------------------
+
+ * New: Automatically flush the cache when an edit is completed.
+ * Fix: Ensure file handles are not held when a file is not found.
+ * Fix: Correct journal rebuilds on Windows.
+ * Fix: Ensure file writer uses the appropriate encoding.
+
+
 Version 1.3.1 *(2013-01-02)*
 ----------------------------
 
