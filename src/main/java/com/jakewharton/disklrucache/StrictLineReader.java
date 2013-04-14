@@ -27,10 +27,10 @@ import java.nio.charset.Charset;
 /**
  * Buffers input from an {@link InputStream} for reading lines.
  *
- * <p>This class is used for buffered reading of lines. For purposes of this class, a line ends with
- * "\n" or "\r\n". End of input is reported by throwing {@code EOFException}. Unterminated line at
- * end of input is invalid and will be ignored, the caller may use {@code hasUnterminatedLine()}
- * to detect it after catching the {@code EOFException}.
+ * <p>This class is used for buffered reading of lines. For purposes of this class, a line ends
+ * with "\n" or "\r\n". End of input is reported by throwing {@code EOFException}. Unterminated
+ * line at end of input is invalid and will be ignored, the caller may use {@code
+ * hasUnterminatedLine()} to detect it after catching the {@code EOFException}.
  *
  * <p>This class is intended for reading input that strictly consists of lines, such as line-based
  * cache entries or cache journal. Unlike the {@link java.io.BufferedReader} which in conjunction
@@ -64,7 +64,7 @@ class StrictLineReader implements Closeable {
    *
    * @param in the {@code InputStream} to read data from.
    * @param charset the charset used to decode data. Only US-ASCII, UTF-8 and ISO-8859-1 are
-   *     supported.
+   * supported.
    * @throws NullPointerException if {@code in} or {@code charset} is null.
    * @throws IllegalArgumentException if the specified charset is not supported.
    */
@@ -78,10 +78,10 @@ class StrictLineReader implements Closeable {
    * @param in the {@code InputStream} to read data from.
    * @param capacity the capacity of the buffer.
    * @param charset the charset used to decode data. Only US-ASCII, UTF-8 and ISO-8859-1 are
-   *     supported.
+   * supported.
    * @throws NullPointerException if {@code in} or {@code charset} is null.
    * @throws IllegalArgumentException if {@code capacity} is negative or zero
-   *     or the specified charset is not supported.
+   * or the specified charset is not supported.
    */
   public StrictLineReader(InputStream in, int capacity, Charset charset) {
     if (in == null || charset == null) {

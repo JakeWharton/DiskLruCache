@@ -64,12 +64,12 @@ import java.util.regex.Pattern;
  * entry may have only one editor at one time; if a value is not available to be
  * edited then {@link #edit} will return null.
  * <ul>
- *   <li>When an entry is being <strong>created</strong> it is necessary to
- *       supply a full set of values; the empty value should be used as a
- *       placeholder if necessary.
- *   <li>When an entry is being <strong>edited</strong>, it is not necessary
- *       to supply data for every value; values default to their previous
- *       value.
+ * <li>When an entry is being <strong>created</strong> it is necessary to
+ * supply a full set of values; the empty value should be used as a
+ * placeholder if necessary.
+ * <li>When an entry is being <strong>edited</strong>, it is not necessary
+ * to supply data for every value; values default to their previous
+ * value.
  * </ul>
  * Every {@link #edit} call must be matched by a call to {@link Editor#commit}
  * or {@link Editor#abort}. Committing is atomic: a read observes the full set
@@ -147,8 +147,8 @@ public final class DiskLruCache implements Closeable {
   private final int valueCount;
   private long size = 0;
   private Writer journalWriter;
-  private final LinkedHashMap<String, Entry> lruEntries
-      = new LinkedHashMap<String, Entry>(0, 0.75f, true);
+  private final LinkedHashMap<String, Entry> lruEntries =
+      new LinkedHashMap<String, Entry>(0, 0.75f, true);
   private int redundantOpCount;
 
   /**
@@ -224,8 +224,7 @@ public final class DiskLruCache implements Closeable {
         cache.readJournal();
         cache.processJournal();
         cache.journalWriter = new BufferedWriter(
-            new OutputStreamWriter(new FileOutputStream(cache.journalFile, true),
-                Util.US_ASCII));
+            new OutputStreamWriter(new FileOutputStream(cache.journalFile, true), Util.US_ASCII));
         return cache;
       } catch (IOException journalIsCorrupt) {
         System.out
@@ -246,8 +245,7 @@ public final class DiskLruCache implements Closeable {
   }
 
   private void readJournal() throws IOException {
-    StrictLineReader reader
-        = new StrictLineReader(new FileInputStream(journalFile), Util.US_ASCII);
+    StrictLineReader reader = new StrictLineReader(new FileInputStream(journalFile), Util.US_ASCII);
     try {
       String magic = reader.readLine();
       String version = reader.readLine();
@@ -568,7 +566,7 @@ public final class DiskLruCache implements Closeable {
    */
   private boolean journalRebuildRequired() {
     final int redundantOpCompactThreshold = 2000;
-    return redundantOpCount >= redundantOpCompactThreshold
+    return redundantOpCount >= redundantOpCompactThreshold //
         && redundantOpCount >= lruEntries.size();
   }
 
