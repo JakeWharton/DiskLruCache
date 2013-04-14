@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.jakewharton;
+package com.jakewharton.disklrucache;
 
 import java.io.Closeable;
 import java.io.File;

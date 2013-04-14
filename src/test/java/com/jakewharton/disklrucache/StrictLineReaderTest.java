@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.jakewharton;
+package com.jakewharton.disklrucache;
 
+import com.jakewharton.disklrucache.StrictLineReader;
+import com.jakewharton.disklrucache.Util;
 import junit.framework.TestCase;
 
 import java.io.ByteArrayInputStream;

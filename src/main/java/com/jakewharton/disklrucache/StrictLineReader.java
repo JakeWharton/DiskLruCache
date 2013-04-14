@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.jakewharton;
+package com.jakewharton.disklrucache;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;

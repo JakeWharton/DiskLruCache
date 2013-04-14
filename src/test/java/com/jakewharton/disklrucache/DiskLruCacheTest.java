@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.jakewharton;
+package com.jakewharton.disklrucache;
 
-import static com.jakewharton.DiskLruCache.JOURNAL_FILE;
-import static com.jakewharton.DiskLruCache.JOURNAL_FILE_BACKUP;
-import static com.jakewharton.DiskLruCache.MAGIC;
-import static com.jakewharton.DiskLruCache.VERSION_1;
+import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE;
+import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE_BACKUP;
+import static com.jakewharton.disklrucache.DiskLruCache.MAGIC;
+import static com.jakewharton.disklrucache.DiskLruCache.VERSION_1;
 
+import com.jakewharton.disklrucache.DiskLruCache;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;

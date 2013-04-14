@@ -1,8 +1,10 @@
 Change Log
 ==========
 
-Version 1.4.0 *(2013-04-13)*
+Version 2.0.0 *(2013-04-13)*
 ----------------------------
+
+The package name is now `com.jakewharton.disklrucache`.
 
  * New: Automatically flush the cache when an edit is completed.
  * Fix: Ensure file handles are not held when a file is not found.
