@@ -67,13 +67,6 @@ running `mvn clean verify`. The output JAR will be in the `target/` directory.
 
 
 
-Developed By
-============
-
- * Jake Wharton - <jakewharton@gmail.com>
-
-
-
 License
 =======
 
