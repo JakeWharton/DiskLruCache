@@ -57,7 +57,7 @@ following to your `pom.xml`:
 <dependency>
     <groupId>com.jakewharton</groupId>
     <artifactId>disklrucache</artifactId>
-    <version>1.3.1</version>
+    <version>(insert latest version)</version>
 </dependency>
 ```
 
@@ -87,4 +87,4 @@ License
 
 
 
- [jar]: https://oss.sonatype.org/content/repositories/releases/com/jakewharton/disklrucache/1.3.1/disklrucache-1.3.1.jar
+ [jar]: http://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.jakewharton&a=disklrucache&v=LATEST
