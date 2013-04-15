@@ -45,10 +45,14 @@ public final class Util {
     }
   }
 
+  /**
+   * Deletes the contents of {@code dir}. Throws an IOException if any file
+   * could not be deleted, or if {@code dir} is not a readable directory.
+   */
   static void deleteContents(File dir) throws IOException {
     File[] files = dir.listFiles();
     if (files == null) {
-      throw new IllegalArgumentException("not a directory: " + dir);
+      throw new IOException("not a readable directory: " + dir);
     }
     for (File file : files) {
       if (file.isDirectory()) {
