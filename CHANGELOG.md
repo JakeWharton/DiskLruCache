@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 2.0.1 *(2013-04-27)*
+----------------------------
+
+ * Fix: Do not throw runtime exceptions for racy file I/O.
+ * Fix: Synchronize calls to `isClosed`.
+
+
 Version 2.0.0 *(2013-04-13)*
 ----------------------------
 
