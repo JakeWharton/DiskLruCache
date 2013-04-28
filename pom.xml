@@ -12,7 +12,7 @@
   <groupId>com.jakewharton</groupId>
   <artifactId>disklrucache</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.1-SNAPSHOT</version>
+  <version>2.0.1</version>
 
   <name>Disk LRU Cache</name>
   <description>A disk-based implementaion of a least-recently used cache.</description>
