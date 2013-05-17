@@ -483,7 +483,7 @@ public final class DiskLruCache implements Closeable {
    * Returns the maximum number of bytes that this cache should use to store
    * its data.
    */
-  public long getMaxSize() {
+  public synchronized long getMaxSize() {
     return maxSize;
   }
 
