@@ -586,7 +586,8 @@ public final class DiskLruCache implements Closeable {
 
     for (int i = 0; i < valueCount; i++) {
       File file = entry.getCleanFile(i);
-      if (!file.delete()) {
+      boolean fileExisted = file.exists();
+      if (fileExisted && !file.delete()) {
         throw new IOException("failed to delete " + file);
       }
       size -= entry.lengths[i];
