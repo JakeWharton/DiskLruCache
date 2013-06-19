@@ -852,6 +852,12 @@ public final class DiskLruCacheTest {
     a.commit();
   }
 
+  @Test public void removeHandlesMissingFile() throws Exception {
+    set("a", "a", "a");
+    getCleanFile("a", 0).delete();
+    cache.remove("a");
+  }
+
   /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a> */
   @Test public void aggressiveClearingHandlesPartialEdit() throws Exception {
     set("a", "a", "a");
