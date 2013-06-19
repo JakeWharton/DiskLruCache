@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+Version 2.0.2 *(2013-06-18)*
+----------------------------
+
+ * Fix: Prevent exception trying to delete a non-existent file.
+
+
 Version 2.0.1 *(2013-04-27)*
 ----------------------------
 
