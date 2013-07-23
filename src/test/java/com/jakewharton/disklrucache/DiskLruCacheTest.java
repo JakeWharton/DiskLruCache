@@ -249,7 +249,7 @@ public final class DiskLruCacheTest {
     assertInoperable(editor);
   }
 
-  @Test public void ExplicitRemoveAppliedToDiskImmediately() throws Exception {
+  @Test public void explicitRemoveAppliedToDiskImmediately() throws Exception {
     DiskLruCache.Editor editor = cache.edit("k1");
     editor.set(0, "ABC");
     editor.set(1, "B");
