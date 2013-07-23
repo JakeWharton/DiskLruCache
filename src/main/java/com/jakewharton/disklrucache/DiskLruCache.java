@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -150,6 +151,7 @@ public final class DiskLruCache implements Closeable {
   private final LinkedHashMap<String, Entry> lruEntries =
       new LinkedHashMap<String, Entry>(0, 0.75f, true);
   private int redundantOpCount;
+  private final Map<Editor, Object> activeEditors = new WeakHashMap<Editor, Object>();
 
   /**
    * To differentiate between old and current snapshots, each entry is given
@@ -471,6 +473,8 @@ public final class DiskLruCache implements Closeable {
     // Flush the journal before creating files to prevent file leaks.
     journalWriter.write(DIRTY + ' ' + key + '\n');
     journalWriter.flush();
+
+    activeEditors.put(editor, null);
     return editor;
   }
 
@@ -510,6 +514,7 @@ public final class DiskLruCache implements Closeable {
     if (entry.currentEditor != editor) {
       throw new IllegalStateException();
     }
+    activeEditors.remove(editor);
 
     // If this edit is creating the entry for the first time, every index must have a value.
     if (success && !entry.readable) {
@@ -654,6 +659,23 @@ public final class DiskLruCache implements Closeable {
     Util.deleteContents(directory);
   }
 
+  /**
+   * Deletes all of the stored values in the cache. This will delete
+   * all files in the cache directory including files that weren't created by
+   * the cache. Any uncommitted {@link Editor editors} will be ignored.
+   */
+  public synchronized void evictAll() throws IOException {
+    Util.deleteContents(directory);
+    for (Editor editor : activeEditors.keySet()) {
+      editor.invalidate();
+    }
+    activeEditors.clear();
+    redundantOpCount = 0;
+    size = 0;
+    lruEntries.clear();
+    rebuildJournal();
+  }
+
   private void validateKey(String key) {
     Matcher matcher = LEGAL_KEY_PATTERN.matcher(key);
     if (!matcher.matches()) {
@@ -723,6 +745,7 @@ public final class DiskLruCache implements Closeable {
     private final boolean[] written;
     private boolean hasErrors;
     private boolean committed;
+    private boolean invalidated;
 
     private Editor(Entry entry) {
       this.entry = entry;
@@ -807,6 +830,9 @@ public final class DiskLruCache implements Closeable {
      * edit lock so another edit may be started on the same key.
      */
     public void commit() throws IOException {
+      if (invalidated) {
+        return;
+      }
       if (hasErrors) {
         completeEdit(this, false);
         remove(entry.key); // The previous entry is stale.
@@ -821,6 +847,9 @@ public final class DiskLruCache implements Closeable {
      * started on the same key.
      */
     public void abort() throws IOException {
+      if (invalidated) {
+        return;
+      }
       completeEdit(this, false);
     }
 
@@ -831,6 +860,10 @@ public final class DiskLruCache implements Closeable {
         } catch (IOException ignored) {
         }
       }
+    }
+
+    public void invalidate() {
+      invalidated = true;
     }
 
     private class FaultHidingOutputStream extends FilterOutputStream {
