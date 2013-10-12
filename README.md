@@ -55,9 +55,9 @@ following to your `pom.xml`:
 
 ```xml
 <dependency>
-    <groupId>com.jakewharton</groupId>
-    <artifactId>disklrucache</artifactId>
-    <version>(insert latest version)</version>
+  <groupId>com.jakewharton</groupId>
+  <artifactId>disklrucache</artifactId>
+  <version>(insert latest version)</version>
 </dependency>
 ```
 
