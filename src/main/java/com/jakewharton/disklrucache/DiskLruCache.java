@@ -381,6 +381,12 @@ public final class DiskLruCache implements Closeable {
         new OutputStreamWriter(new FileOutputStream(journalFile, true), Util.US_ASCII));
   }
 
+  public void cleanupIfNeeded() {
+    if (size > maxSize || journalRebuildRequired()) {
+      executorService.submit(cleanupCallable);
+    }
+  }
+
   private static void deleteIfExists(File file) throws IOException {
     if (file.exists() && !file.delete()) {
       throw new IOException();
@@ -493,7 +499,7 @@ public final class DiskLruCache implements Closeable {
    */
   public synchronized void setMaxSize(long maxSize) {
     this.maxSize = maxSize;
-    executorService.submit(cleanupCallable);
+    cleanupIfNeeded();
   }
 
   /**
@@ -554,10 +560,7 @@ public final class DiskLruCache implements Closeable {
       journalWriter.write(REMOVE + ' ' + entry.key + '\n');
     }
     journalWriter.flush();
-
-    if (size > maxSize || journalRebuildRequired()) {
-      executorService.submit(cleanupCallable);
-    }
+    cleanupIfNeeded();
   }
 
   /**
