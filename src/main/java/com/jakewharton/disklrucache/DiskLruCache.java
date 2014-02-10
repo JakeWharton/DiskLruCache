@@ -417,17 +417,14 @@ public final class DiskLruCache implements Closeable {
 
   public boolean contains(String key) {
     readLock.lock();
-    boolean doesContain = false;
     try {
       checkNotClosed();
       validateKey(key);
       Entry entry = lruEntries.get(key);
-      doesContain = (entry != null);
+      return (entry != null);
     } finally {
       readLock.unlock();
     }
-
-    return doesContain;
   }
 
   /**
