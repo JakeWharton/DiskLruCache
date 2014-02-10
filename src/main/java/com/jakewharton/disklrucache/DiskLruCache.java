@@ -437,8 +437,7 @@ public final class DiskLruCache implements Closeable {
    */
   public Snapshot get(String key) throws IOException {
     readLock.lock();
-    try
-    {
+    try {
       checkNotClosed();
       validateKey(key);
       Entry entry = lruEntries.get(key);
@@ -475,7 +474,7 @@ public final class DiskLruCache implements Closeable {
       if (journalRebuildRequired()) {
         executorService.submit(cleanupCallable);
       }
-      
+
       return new Snapshot(key, entry.sequenceNumber, ins, entry.lengths);
     } finally {
       readLock.unlock();
@@ -513,7 +512,7 @@ public final class DiskLruCache implements Closeable {
       // Flush the journal before creating files to prevent file leaks.
       journalWriter.write(DIRTY + ' ' + key + '\n');
       journalWriter.flush();
-      
+
       return editor;
     } finally {
       writeLock.unlock();
@@ -579,7 +578,8 @@ public final class DiskLruCache implements Closeable {
         for (int i = 0; i < valueCount; i++) {
           if (!editor.written[i]) {
             editor.abort();
-            throw new IllegalStateException("Newly created entry didn't create value for index " + i);
+            throw
+              new IllegalStateException("Newly created entry didn't create value for index " + i);
           }
           if (!entry.getDirtyFile(i).exists()) {
             editor.abort();
@@ -698,8 +698,7 @@ public final class DiskLruCache implements Closeable {
       checkNotClosed();
       trimToSize();
       journalWriter.flush();
-    }
-    finally {
+    } finally {
       writeLock.unlock();
     }
   }
