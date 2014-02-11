@@ -31,6 +31,8 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE;
 import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE_BACKUP;
@@ -41,16 +43,15 @@ import static org.junit.Assert.fail;
 
 public final class DiskLruCacheTest {
   private final int appVersion = 100;
-  private String javaTmpDir;
   private File cacheDir;
   private File journalFile;
   private File journalBkpFile;
   private DiskLruCache cache;
+  
+  @Rule public TemporaryFolder tempDir = new TemporaryFolder();
 
   @Before public void setUp() throws Exception {
-    javaTmpDir = System.getProperty("java.io.tmpdir");
-    cacheDir = new File(javaTmpDir, "DiskLruCacheTest");
-    cacheDir.mkdir();
+    cacheDir = tempDir.newFolder( "DiskLruCacheTest" );
     journalFile = new File(cacheDir, JOURNAL_FILE);
     journalBkpFile = new File(cacheDir, JOURNAL_FILE_BACKUP);
     for (File file : cacheDir.listFiles()) {
@@ -769,7 +770,7 @@ public final class DiskLruCacheTest {
 
   @Test public void openCreatesDirectoryIfNecessary() throws Exception {
     cache.close();
-    File dir = new File(javaTmpDir, "testOpenCreatesDirectoryIfNecessary");
+    File dir = tempDir.newFolder("testOpenCreatesDirectoryIfNecessary");
     cache = DiskLruCache.open(dir, appVersion, 2, Integer.MAX_VALUE);
     set("a", "a", "a");
     assertThat(new File(dir, "a.0").exists()).isTrue();
