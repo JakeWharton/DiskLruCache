@@ -51,7 +51,7 @@ public final class DiskLruCacheTest {
   @Rule public TemporaryFolder tempDir = new TemporaryFolder();
 
   @Before public void setUp() throws Exception {
-    cacheDir = tempDir.newFolder( "DiskLruCacheTest" );
+    cacheDir = tempDir.newFolder("DiskLruCacheTest");
     journalFile = new File(cacheDir, JOURNAL_FILE);
     journalBkpFile = new File(cacheDir, JOURNAL_FILE_BACKUP);
     for (File file : cacheDir.listFiles()) {
