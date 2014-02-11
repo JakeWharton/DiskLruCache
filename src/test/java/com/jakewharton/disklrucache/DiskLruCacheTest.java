@@ -836,6 +836,34 @@ public final class DiskLruCacheTest {
     cache.flush();
     assertThat(snapshot.edit()).isNull();
   }
+  
+  @Test public void containsAfterEdit() throws Exception {
+    cache.close();
+    cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    set("a", "aa", "aaa");
+    set("b", "bb", "bbb");
+    assertThat(cache.contains("a")).isTrue();
+    cache.flush();
+  }
+  
+  @Test public void notContains() throws Exception {
+    cache.close();
+    cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    set("a", "aa", "aaa");
+    set("b", "bb", "bbb");
+    assertThat(cache.contains("c")).isFalse();
+    cache.flush();
+  }
+  
+  @Test public void notContainsAfterRemove() throws Exception {
+    cache.close();
+    cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    set("a", "aa", "aaa");
+    set("b", "bb", "bbb");
+    cache.remove("a");
+    assertThat(cache.contains("a")).isFalse();
+    cache.flush();
+  }
 
   /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a> */
   @Test public void aggressiveClearingHandlesWrite() throws Exception {
