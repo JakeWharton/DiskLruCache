@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+Version 2.0.3 *(2014-05-25)*
+----------------------------
+
+ * New: Allow keys to contain any number and type of characters.
+
+
 Version 2.0.2 *(2013-06-18)*
 ----------------------------
 

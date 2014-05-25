@@ -15,7 +15,7 @@
   <version>2.0.3-SNAPSHOT</version>
 
   <name>Disk LRU Cache</name>
-  <description>A disk-based implementaion of a least-recently used cache.</description>
+  <description>A disk-based implementation of a least-recently used cache.</description>
   <url>https://github.com/JakeWharton/DiskLruCache/</url>
   <inceptionYear>2012</inceptionYear>
 
