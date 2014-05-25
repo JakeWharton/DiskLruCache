@@ -37,15 +37,17 @@ import org.junit.rules.TemporaryFolder;
 import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE;
 import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE_BACKUP;
 import static com.jakewharton.disklrucache.DiskLruCache.MAGIC;
-import static com.jakewharton.disklrucache.DiskLruCache.VERSION_1;
+import static com.jakewharton.disklrucache.DiskLruCache.VERSION_2;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 public final class DiskLruCacheTest {
+  private final String UUID = "f07a0c61-5bf7-4724-b13d-33b45818c8a5";
   private final int appVersion = 100;
   private File cacheDir;
   private File journalFile;
   private File journalBkpFile;
+  private PredictableIdGenerator idGenerator;
   private DiskLruCache cache;
   
   @Rule public TemporaryFolder tempDir = new TemporaryFolder();
@@ -58,6 +60,8 @@ public final class DiskLruCacheTest {
       file.delete();
     }
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    idGenerator = new PredictableIdGenerator(UUID);
+    cache.setIdGenerator(idGenerator);
   }
 
   @After public void tearDown() throws Exception {
@@ -70,67 +74,27 @@ public final class DiskLruCacheTest {
   }
 
   @Test public void validateKey() throws Exception {
-    String key = null;
     try {
-      key = "has_space ";
-      cache.edit(key);
-      fail("Exepcting an IllegalArgumentException as the key was invalid.");
-    } catch (IllegalArgumentException iae) {
-      assertThat(iae.getMessage()).isEqualTo(
-          "keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
+      cache.edit(null);
+      fail("Expecting an IllegalArgumentException as the key was invalid.");
+    } catch (NullPointerException npe) {
+      assertThat(npe.getMessage()).isEqualTo("keys must not be empty");
     }
     try {
-      key = "has_CR\r";
-      cache.edit(key);
-      fail("Exepcting an IllegalArgumentException as the key was invalid.");
-    } catch (IllegalArgumentException iae) {
-      assertThat(iae.getMessage()).isEqualTo(
-          "keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
-    }
-    try {
-      key = "has_LF\n";
-      cache.edit(key);
-      fail("Exepcting an IllegalArgumentException as the key was invalid.");
-    } catch (IllegalArgumentException iae) {
-      assertThat(iae.getMessage()).isEqualTo(
-          "keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
-    }
-    try {
-      key = "has_invalid/";
-      cache.edit(key);
-      fail("Exepcting an IllegalArgumentException as the key was invalid.");
-    } catch (IllegalArgumentException iae) {
-      assertThat(iae.getMessage()).isEqualTo(
-          "keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
-    }
-    try {
-      key = "has_invalid\u2603";
-      cache.edit(key);
-      fail("Exepcting an IllegalArgumentException as the key was invalid.");
-    } catch (IllegalArgumentException iae) {
-      assertThat(iae.getMessage()).isEqualTo(
-          "keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
-    }
-    try {
-      key = "this_is_way_too_long_this_is_way_too_long_this_is_way_too_long_this_is_way_too_long";
-      cache.edit(key);
-      fail("Exepcting an IllegalArgumentException as the key was too long.");
-    } catch (IllegalArgumentException iae) {
-      assertThat(iae.getMessage()).isEqualTo(
-          "keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
+      cache.edit("");
+      fail("Expecting an IllegalArgumentException as the key was invalid.");
+    } catch (NullPointerException npe) {
+      assertThat(npe.getMessage()).isEqualTo("keys must not be empty");
     }
 
     // Test valid cases.
-
-    // Exactly 64.
-    key = "0123456789012345678901234567890123456789012345678901234567890123";
-    cache.edit(key).abort();
-    // Contains all valid characters.
-    key = "abcdefghijklmnopqrstuvwxyz_0123456789";
-    cache.edit(key).abort();
-    // Contains dash.
-    key = "-20384573948576";
-    cache.edit(key).abort();
+    cache.edit("has_space ").abort();
+    cache.edit("has_CR\r").abort();
+    cache.edit("has_LF\n").abort();
+    cache.edit("has_slash/").abort();
+    cache.edit("has_unicode_char\u2603").abort();
+    cache.edit("has_a_very_long_long_long_long_long_long_long_long_long_long_long_long_long_long_key0123456789").abort();
+    cache.edit("has_dash-").abort();
   }
 
   @Test public void writeAndReadEntry() throws Exception {
@@ -153,16 +117,17 @@ public final class DiskLruCacheTest {
   @Test public void readAndWriteEntryAcrossCacheOpenAndClose() throws Exception {
     DiskLruCache.Editor creator = cache.edit("k1");
     creator.set(0, "A");
-    creator.set(1, "B");
+    creator.set(1, "abcABC123,?;.:/!§ \n\t\"\r\\&@");
     creator.commit();
     cache.close();
 
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     DiskLruCache.Snapshot snapshot = cache.get("k1");
     assertThat(snapshot.getString(0)).isEqualTo("A");
     assertThat(snapshot.getLength(0)).isEqualTo(1);
-    assertThat(snapshot.getString(1)).isEqualTo("B");
-    assertThat(snapshot.getLength(1)).isEqualTo(1);
+    assertThat(snapshot.getString(1)).isEqualTo("abcABC123,?;.:/!§ \n\t\"\r\\&@");
+    assertThat(snapshot.getLength(1)).isEqualTo(26);
     snapshot.close();
   }
 
@@ -174,6 +139,7 @@ public final class DiskLruCacheTest {
 
     // Simulate a dirty close of 'cache' by opening the cache directory again.
     DiskLruCache cache2 = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     DiskLruCache.Snapshot snapshot = cache2.get("k1");
     assertThat(snapshot.getString(0)).isEqualTo("A");
     assertThat(snapshot.getLength(0)).isEqualTo(1);
@@ -185,28 +151,28 @@ public final class DiskLruCacheTest {
 
   @Test public void journalWithEditAndPublish() throws Exception {
     DiskLruCache.Editor creator = cache.edit("k1");
-    assertJournalEquals("DIRTY k1"); // DIRTY must always be flushed.
+    assertJournalEquals("DIRTY k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\""); // DIRTY must always be flushed.
     creator.set(0, "AB");
     creator.set(1, "C");
     creator.commit();
     cache.close();
-    assertJournalEquals("DIRTY k1", "CLEAN k1 2 1");
+    assertJournalEquals("DIRTY k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\"", "CLEAN k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\" 2 1");
   }
 
   @Test public void revertedNewFileIsRemoveInJournal() throws Exception {
     DiskLruCache.Editor creator = cache.edit("k1");
-    assertJournalEquals("DIRTY k1"); // DIRTY must always be flushed.
+    assertJournalEquals("DIRTY k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\""); // DIRTY must always be flushed.
     creator.set(0, "AB");
     creator.set(1, "C");
     creator.abort();
     cache.close();
-    assertJournalEquals("DIRTY k1", "REMOVE k1");
+    assertJournalEquals("DIRTY k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\"", "REMOVE k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5");
   }
 
   @Test public void unterminatedEditIsRevertedOnClose() throws Exception {
     cache.edit("k1");
     cache.close();
-    assertJournalEquals("DIRTY k1", "REMOVE k1");
+    assertJournalEquals("DIRTY k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\"", "REMOVE k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5");
   }
 
   @Test public void journalDoesNotIncludeReadOfYetUnpublishedValue() throws Exception {
@@ -216,7 +182,7 @@ public final class DiskLruCacheTest {
     creator.set(1, "BC");
     creator.commit();
     cache.close();
-    assertJournalEquals("DIRTY k1", "CLEAN k1 1 2");
+    assertJournalEquals("DIRTY k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\"", "CLEAN k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\" 1 2");
   }
 
   @Test public void journalWithEditAndPublishAndRead() throws Exception {
@@ -231,7 +197,12 @@ public final class DiskLruCacheTest {
     DiskLruCache.Snapshot k1Snapshot = cache.get("k1");
     k1Snapshot.close();
     cache.close();
-    assertJournalEquals("DIRTY k1", "CLEAN k1 2 1", "DIRTY k2", "CLEAN k2 3 1", "READ k1");
+    assertJournalEquals(
+        "DIRTY k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\"",
+        "CLEAN k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\" 2 1",
+        "DIRTY k2_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k2\"",
+        "CLEAN k2_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k2\" 3 1",
+        "READ k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5");
   }
 
   @Test public void cannotOperateOnEditAfterPublish() throws Exception {
@@ -255,7 +226,7 @@ public final class DiskLruCacheTest {
     editor.set(0, "ABC");
     editor.set(1, "B");
     editor.commit();
-    File k1 = getCleanFile("k1", 0);
+    File k1 = getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0);
     assertThat(readFile(k1)).isEqualTo("ABC");
     cache.remove("k1");
     assertThat(k1.exists()).isFalse();
@@ -297,16 +268,17 @@ public final class DiskLruCacheTest {
 
   @Test public void openWithDirtyKeyDeletesAllFilesForThatKey() throws Exception {
     cache.close();
-    File cleanFile0 = getCleanFile("k1", 0);
-    File cleanFile1 = getCleanFile("k1", 1);
-    File dirtyFile0 = getDirtyFile("k1", 0);
-    File dirtyFile1 = getDirtyFile("k1", 1);
+    File cleanFile0 = getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0);
+    File cleanFile1 = getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1);
+    File dirtyFile0 = getDirtyFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0);
+    File dirtyFile1 = getDirtyFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1);
     writeFile(cleanFile0, "A");
     writeFile(cleanFile1, "B");
     writeFile(dirtyFile0, "C");
     writeFile(dirtyFile1, "D");
-    createJournal("CLEAN k1 1 1", "DIRTY   k1");
+    createJournal("CLEAN k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\" 1 1", "DIRTY   k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\"");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertThat(cleanFile0.exists()).isFalse();
     assertThat(cleanFile1.exists()).isFalse();
     assertThat(dirtyFile0.exists()).isFalse();
@@ -319,38 +291,43 @@ public final class DiskLruCacheTest {
     generateSomeGarbageFiles();
     createJournalWithHeader(MAGIC, "0", "100", "2", "");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertGarbageFilesAllDeleted();
   }
 
   @Test public void openWithInvalidAppVersionClearsDirectory() throws Exception {
     cache.close();
     generateSomeGarbageFiles();
-    createJournalWithHeader(MAGIC, "1", "101", "2", "");
+    createJournalWithHeader(MAGIC, "2", "101", "2", "");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertGarbageFilesAllDeleted();
   }
 
   @Test public void openWithInvalidValueCountClearsDirectory() throws Exception {
     cache.close();
     generateSomeGarbageFiles();
-    createJournalWithHeader(MAGIC, "1", "100", "1", "");
+    createJournalWithHeader(MAGIC, "2", "100", "1", "");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertGarbageFilesAllDeleted();
   }
 
   @Test public void openWithInvalidBlankLineClearsDirectory() throws Exception {
     cache.close();
     generateSomeGarbageFiles();
-    createJournalWithHeader(MAGIC, "1", "100", "2", "x");
+    createJournalWithHeader(MAGIC, "2", "100", "2", "x");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertGarbageFilesAllDeleted();
   }
 
   @Test public void openWithInvalidJournalLineClearsDirectory() throws Exception {
     cache.close();
     generateSomeGarbageFiles();
-    createJournal("CLEAN k1 1 1", "BOGUS");
+    createJournal("CLEAN k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\" 1 1", "BOGUS");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertGarbageFilesAllDeleted();
     assertThat(cache.get("k1")).isNull();
   }
@@ -358,54 +335,33 @@ public final class DiskLruCacheTest {
   @Test public void openWithInvalidFileSizeClearsDirectory() throws Exception {
     cache.close();
     generateSomeGarbageFiles();
-    createJournal("CLEAN k1 0000x001 1");
+    createJournal("CLEAN k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\" 0000x001 1");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertGarbageFilesAllDeleted();
     assertThat(cache.get("k1")).isNull();
   }
 
   @Test public void openWithTruncatedLineDiscardsThatLine() throws Exception {
     cache.close();
-    writeFile(getCleanFile("k1", 0), "A");
-    writeFile(getCleanFile("k1", 1), "B");
+    writeFile(getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0), "A");
+    writeFile(getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1), "B");
     Writer writer = new FileWriter(journalFile);
-    writer.write(MAGIC + "\n" + VERSION_1 + "\n100\n2\n\nCLEAN k1 1 1"); // no trailing newline
+    writer.write(MAGIC + "\n" + VERSION_2 + "\n100\n2\n\nCLEAN k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\" 1 1"); // no trailing newline
     writer.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertThat(cache.get("k1")).isNull();
   }
 
   @Test public void openWithTooManyFileSizesClearsDirectory() throws Exception {
     cache.close();
     generateSomeGarbageFiles();
-    createJournal("CLEAN k1 1 1 1");
+    createJournal("CLEAN k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5 \"k1\" 1 1 1");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     assertGarbageFilesAllDeleted();
     assertThat(cache.get("k1")).isNull();
-  }
-
-  @Test public void keyWithSpaceNotPermitted() throws Exception {
-    try {
-      cache.edit("my key");
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
-  }
-
-  @Test public void keyWithNewlineNotPermitted() throws Exception {
-    try {
-      cache.edit("my\nkey");
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
-  }
-
-  @Test public void keyWithCarriageReturnNotPermitted() throws Exception {
-    try {
-      cache.edit("my\rkey");
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
   }
 
   @Test public void nullKeyThrows() throws Exception {
@@ -425,10 +381,10 @@ public final class DiskLruCacheTest {
     } catch (IllegalStateException expected) {
     }
 
-    assertThat(getCleanFile("k1", 0).exists()).isFalse();
-    assertThat(getCleanFile("k1", 1).exists()).isFalse();
-    assertThat(getDirtyFile("k1", 0).exists()).isFalse();
-    assertThat(getDirtyFile("k1", 1).exists()).isFalse();
+    assertThat(getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0).exists()).isFalse();
+    assertThat(getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1).exists()).isFalse();
+    assertThat(getDirtyFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0).exists()).isFalse();
+    assertThat(getDirtyFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1).exists()).isFalse();
     assertThat(cache.get("k1")).isNull();
 
     DiskLruCache.Editor creator2 = cache.edit("k1");
@@ -441,10 +397,10 @@ public final class DiskLruCacheTest {
     DiskLruCache.Editor creator = cache.edit("k1");
     creator.set(1, "A");
     creator.abort();
-    assertThat(getCleanFile("k1", 0).exists()).isFalse();
-    assertThat(getCleanFile("k1", 1).exists()).isFalse();
-    assertThat(getDirtyFile("k1", 0).exists()).isFalse();
-    assertThat(getDirtyFile("k1", 1).exists()).isFalse();
+    assertThat(getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0).exists()).isFalse();
+    assertThat(getCleanFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1).exists()).isFalse();
+    assertThat(getDirtyFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0).exists()).isFalse();
+    assertThat(getDirtyFile("k1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1).exists()).isFalse();
     assertThat(cache.get("k1")).isNull();
   }
 
@@ -469,6 +425,7 @@ public final class DiskLruCacheTest {
   @Test public void growMaxSize() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
     set("a", "a", "aaa"); // size 4
     set("b", "bb", "bbbb"); // size 6
     cache.setMaxSize(20);
@@ -479,10 +436,19 @@ public final class DiskLruCacheTest {
   @Test public void shrinkMaxSizeEvicts() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 20);
+    cache.setIdGenerator(idGenerator);
     set("a", "a", "aaa"); // size 4
     set("b", "bb", "bbbb"); // size 6
     set("c", "c", "c"); // size 12
     cache.setMaxSize(10);
+
+    // Wait for the running tasks to finish
+    long watchDog = 20;
+    while (cache.executorService.getActiveCount() > 0 && watchDog > 0) {
+      Thread.sleep(150);
+      watchDog--;
+    }
+
     assertThat(cache.executorService.getTaskCount()).isEqualTo(1);
     cache.executorService.purge();
   }
@@ -490,6 +456,7 @@ public final class DiskLruCacheTest {
   @Test public void evictOnInsert() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
 
     set("a", "a", "aaa"); // size 4
     set("b", "bb", "bbbb"); // size 6
@@ -526,6 +493,7 @@ public final class DiskLruCacheTest {
   @Test public void evictOnUpdate() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
 
     set("a", "a", "aa"); // size 3
     set("b", "b", "bb"); // size 3
@@ -544,6 +512,7 @@ public final class DiskLruCacheTest {
   @Test public void evictionHonorsLruFromCurrentSession() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
     set("a", "a", "a");
     set("b", "b", "b");
     set("c", "c", "c");
@@ -576,6 +545,7 @@ public final class DiskLruCacheTest {
     assertThat(cache.size()).isEqualTo(12);
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
 
     set("g", "g", "g");
     cache.flush();
@@ -592,6 +562,7 @@ public final class DiskLruCacheTest {
   @Test public void cacheSingleEntryOfSizeGreaterThanMaxSize() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
     set("a", "aaaaa", "aaaaaa"); // size=11
     cache.flush();
     assertAbsent("a");
@@ -600,6 +571,7 @@ public final class DiskLruCacheTest {
   @Test public void cacheSingleValueOfSizeGreaterThanMaxSize() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
     set("a", "aaaaaaaaaaa", "a"); // size=12
     cache.flush();
     assertAbsent("a");
@@ -681,6 +653,7 @@ public final class DiskLruCacheTest {
       assertValue("b", "b", "b");
       cache.close();
       cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+      cache.setIdGenerator(idGenerator);
       if (journalLength < lastJournalLength) {
         System.out
             .printf("Journal compacted from %s bytes to %s bytes\n", lastJournalLength,
@@ -700,6 +673,7 @@ public final class DiskLruCacheTest {
       set("b", "b", "b");
       cache.close();
       cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+      cache.setIdGenerator(idGenerator);
       if (journalLength < lastJournalLength) {
         System.out
             .printf("Journal compacted from %s bytes to %s bytes\n", lastJournalLength,
@@ -721,6 +695,7 @@ public final class DiskLruCacheTest {
     assertThat(journalFile.exists()).isFalse();
 
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
 
     DiskLruCache.Snapshot snapshot = cache.get("k1");
     assertThat(snapshot.getString(0)).isEqualTo("ABC");
@@ -751,6 +726,7 @@ public final class DiskLruCacheTest {
     assertThat(journalBkpFile.exists()).isTrue();
 
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
 
     DiskLruCache.Snapshot snapshotA = cache.get("k1");
     assertThat(snapshotA.getString(0)).isEqualTo("ABC");
@@ -772,15 +748,16 @@ public final class DiskLruCacheTest {
     cache.close();
     File dir = tempDir.newFolder("testOpenCreatesDirectoryIfNecessary");
     cache = DiskLruCache.open(dir, appVersion, 2, Integer.MAX_VALUE);
+    cache.setIdGenerator(idGenerator);
     set("a", "a", "a");
-    assertThat(new File(dir, "a.0").exists()).isTrue();
-    assertThat(new File(dir, "a.1").exists()).isTrue();
+    assertThat(new File(dir, "a_f07a0c61-5bf7-4724-b13d-33b45818c8a5.0").exists()).isTrue();
+    assertThat(new File(dir, "a_f07a0c61-5bf7-4724-b13d-33b45818c8a5.1").exists()).isTrue();
     assertThat(new File(dir, "journal").exists()).isTrue();
   }
 
   @Test public void fileDeletedExternally() throws Exception {
     set("a", "a", "a");
-    getCleanFile("a", 1).delete();
+    getCleanFile("a_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1).delete();
     assertThat(cache.get("a")).isNull();
   }
 
@@ -817,6 +794,7 @@ public final class DiskLruCacheTest {
   @Test public void editSinceEvicted() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
     set("a", "aa", "aaa"); // size 5
     DiskLruCache.Snapshot snapshot = cache.get("a");
     set("b", "bb", "bbb"); // size 5
@@ -828,6 +806,7 @@ public final class DiskLruCacheTest {
   @Test public void editSinceEvictedAndRecreated() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
+    cache.setIdGenerator(idGenerator);
     set("a", "aa", "aaa"); // size 5
     DiskLruCache.Snapshot snapshot = cache.get("a");
     set("b", "bb", "bbb"); // size 5
@@ -855,7 +834,7 @@ public final class DiskLruCacheTest {
 
   @Test public void removeHandlesMissingFile() throws Exception {
     set("a", "a", "a");
-    getCleanFile("a", 0).delete();
+    getCleanFile("a_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0).delete();
     cache.remove("a");
   }
 
@@ -880,7 +859,7 @@ public final class DiskLruCacheTest {
   private void assertJournalEquals(String... expectedBodyLines) throws Exception {
     List<String> expectedLines = new ArrayList<String>();
     expectedLines.add(MAGIC);
-    expectedLines.add(VERSION_1);
+    expectedLines.add(VERSION_2);
     expectedLines.add("100");
     expectedLines.add("2");
     expectedLines.add("");
@@ -889,7 +868,7 @@ public final class DiskLruCacheTest {
   }
 
   private void createJournal(String... bodyLines) throws Exception {
-    createJournalWithHeader(MAGIC, VERSION_1, "100", "2", "", bodyLines);
+    createJournalWithHeader(MAGIC, VERSION_2, "100", "2", "", bodyLines);
   }
 
   private void createJournalWithHeader(String magic, String version, String appVersion,
@@ -918,12 +897,12 @@ public final class DiskLruCacheTest {
     return result;
   }
 
-  private File getCleanFile(String key, int index) {
-    return new File(cacheDir, key + "." + index);
+  private File getCleanFile(String id, int index) {
+    return new File(cacheDir, id + "." + index);
   }
 
-  private File getDirtyFile(String key, int index) {
-    return new File(cacheDir, key + "." + index + ".tmp");
+  private File getDirtyFile(String id, int index) {
+    return new File(cacheDir, id + "." + index + ".tmp");
   }
 
   private static String readFile(File file) throws Exception {
@@ -980,11 +959,11 @@ public final class DiskLruCacheTest {
   private void generateSomeGarbageFiles() throws Exception {
     File dir1 = new File(cacheDir, "dir1");
     File dir2 = new File(dir1, "dir2");
-    writeFile(getCleanFile("g1", 0), "A");
-    writeFile(getCleanFile("g1", 1), "B");
-    writeFile(getCleanFile("g2", 0), "C");
-    writeFile(getCleanFile("g2", 1), "D");
-    writeFile(getCleanFile("g2", 1), "D");
+    writeFile(getCleanFile("g1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0), "A");
+    writeFile(getCleanFile("g1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1), "B");
+    writeFile(getCleanFile("g2_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0), "C");
+    writeFile(getCleanFile("g2_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1), "D");
+    writeFile(getCleanFile("g2_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1), "D");
     writeFile(new File(cacheDir, "otherFile0"), "E");
     dir1.mkdir();
     dir2.mkdir();
@@ -992,10 +971,10 @@ public final class DiskLruCacheTest {
   }
 
   private void assertGarbageFilesAllDeleted() throws Exception {
-    assertThat(getCleanFile("g1", 0)).doesNotExist();
-    assertThat(getCleanFile("g1", 1)).doesNotExist();
-    assertThat(getCleanFile("g2", 0)).doesNotExist();
-    assertThat(getCleanFile("g2", 1)).doesNotExist();
+    assertThat(getCleanFile("g1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0)).doesNotExist();
+    assertThat(getCleanFile("g1_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1)).doesNotExist();
+    assertThat(getCleanFile("g2_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 0)).doesNotExist();
+    assertThat(getCleanFile("g2_f07a0c61-5bf7-4724-b13d-33b45818c8a5", 1)).doesNotExist();
     assertThat(new File(cacheDir, "otherFile0")).doesNotExist();
     assertThat(new File(cacheDir, "dir1")).doesNotExist();
   }
@@ -1013,10 +992,11 @@ public final class DiskLruCacheTest {
       snapshot.close();
       fail();
     }
-    assertThat(getCleanFile(key, 0)).doesNotExist();
-    assertThat(getCleanFile(key, 1)).doesNotExist();
-    assertThat(getDirtyFile(key, 0)).doesNotExist();
-    assertThat(getDirtyFile(key, 1)).doesNotExist();
+    String id = idGenerator.generateId(key);
+    assertThat(getCleanFile(id, 0)).doesNotExist();
+    assertThat(getCleanFile(id, 1)).doesNotExist();
+    assertThat(getDirtyFile(id, 0)).doesNotExist();
+    assertThat(getDirtyFile(id, 1)).doesNotExist();
   }
 
   private void assertValue(String key, String value0, String value1) throws Exception {
@@ -1025,8 +1005,9 @@ public final class DiskLruCacheTest {
     assertThat(snapshot.getLength(0)).isEqualTo(value0.length());
     assertThat(snapshot.getString(1)).isEqualTo(value1);
     assertThat(snapshot.getLength(1)).isEqualTo(value1.length());
-    assertThat(getCleanFile(key, 0)).exists();
-    assertThat(getCleanFile(key, 1)).exists();
+    String id = idGenerator.generateId(key);
+    assertThat(getCleanFile(id, 0)).exists();
+    assertThat(getCleanFile(id, 1)).exists();
     snapshot.close();
   }
 }

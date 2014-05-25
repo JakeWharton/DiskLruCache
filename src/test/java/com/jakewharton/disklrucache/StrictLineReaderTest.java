@@ -29,7 +29,7 @@ public class StrictLineReaderTest {
     try {
       // Testing with LineReader buffer capacity 32 to check some corner cases.
       StrictLineReader lineReader =
-          new StrictLineReader(createTestInputStream(), 32, Util.US_ASCII);
+          new StrictLineReader(createTestInputStream(), 32, Util.UTF_8);
       InputStream refStream = createTestInputStream();
       while (true) {
         try {
