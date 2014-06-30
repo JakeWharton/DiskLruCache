@@ -138,9 +138,7 @@ public final class DiskLruCacheTest {
     creator.set(0, "ABC");
     creator.set(1, "DE");
     assertThat(creator.getString(0)).isNull();
-    assertThat(creator.newInputStream(0)).isNull();
     assertThat(creator.getString(1)).isNull();
-    assertThat(creator.newInputStream(1)).isNull();
     creator.commit();
 
     DiskLruCache.Value value = cache.get("k1");
@@ -917,12 +915,7 @@ public final class DiskLruCacheTest {
     } catch (IllegalStateException expected) {
     }
     try {
-      editor.newInputStream(0);
-      fail();
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      editor.newOutputStream(0);
+      editor.getFile(0);
       fail();
     } catch (IllegalStateException expected) {
     }

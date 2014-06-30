@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -691,18 +690,10 @@ public final class DiskLruCache implements Closeable {
     }
   }
 
-  private static final OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
-    @Override
-    public void write(int b) throws IOException {
-      // Eat all writes silently. Nom nom.
-    }
-  };
-
   /** Edits the values for an entry. */
   public final class Editor {
     private final Entry entry;
     private final boolean[] written;
-    private boolean hasErrors;
     private boolean committed;
 
     private Editor(Entry entry) {
@@ -714,7 +705,7 @@ public final class DiskLruCache implements Closeable {
      * Returns an unbuffered input stream to read the last committed value,
      * or null if no value has been committed.
      */
-    public InputStream newInputStream(int index) throws IOException {
+    private InputStream newInputStream(int index) throws IOException {
       synchronized (DiskLruCache.this) {
         if (entry.currentEditor != this) {
           throw new IllegalStateException();
@@ -739,41 +730,19 @@ public final class DiskLruCache implements Closeable {
       return in != null ? inputStreamToString(in) : null;
     }
 
-    /**
-     * Returns a new unbuffered output stream to write the value at
-     * {@code index}. If the underlying output stream encounters errors
-     * when writing to the filesystem, this edit will be aborted when
-     * {@link #commit} is called. The returned output stream does not throw
-     * IOExceptions.
-     */
-    public OutputStream newOutputStream(int index) throws IOException {
-      if (index < 0 || index >= valueCount) {
-        throw new IllegalArgumentException("Expected index " + index + " to "
-                + "be greater than 0 and less than the maximum value count "
-                + "of " + valueCount);
-      }
+    public File getFile(int index) throws IOException {
       synchronized (DiskLruCache.this) {
         if (entry.currentEditor != this) {
-          throw new IllegalStateException();
+            throw new IllegalStateException();
         }
         if (!entry.readable) {
-          written[index] = true;
+            written[index] = true;
         }
         File dirtyFile = entry.getDirtyFile(index);
-        FileOutputStream outputStream;
-        try {
-          outputStream = new FileOutputStream(dirtyFile);
-        } catch (FileNotFoundException e) {
-          // Attempt to recreate the cache directory.
-          directory.mkdirs();
-          try {
-            outputStream = new FileOutputStream(dirtyFile);
-          } catch (FileNotFoundException e2) {
-            // We are unable to recover. Silently eat the writes.
-            return NULL_OUTPUT_STREAM;
-          }
+        if (!directory.exists()) {
+            directory.mkdirs();
         }
-        return new FaultHidingOutputStream(outputStream);
+        return dirtyFile;
       }
     }
 
@@ -781,7 +750,8 @@ public final class DiskLruCache implements Closeable {
     public void set(int index, String value) throws IOException {
       Writer writer = null;
       try {
-        writer = new OutputStreamWriter(newOutputStream(index), Util.UTF_8);
+        OutputStream os = new FileOutputStream(getFile(index));
+        writer = new OutputStreamWriter(os, Util.UTF_8);
         writer.write(value);
       } finally {
         Util.closeQuietly(writer);
@@ -793,12 +763,10 @@ public final class DiskLruCache implements Closeable {
      * edit lock so another edit may be started on the same key.
      */
     public void commit() throws IOException {
-      if (hasErrors) {
-        completeEdit(this, false);
-        remove(entry.key); // The previous entry is stale.
-      } else {
-        completeEdit(this, true);
-      }
+      // The object using this Editor must catch and handle any errors during the write. If there is an error and
+      // they call commit anyway, we will assume whatever they managed to write was valid. Normally they should call
+      // abort.
+      completeEdit(this, true);
       committed = true;
     }
 
@@ -815,44 +783,6 @@ public final class DiskLruCache implements Closeable {
         try {
           abort();
         } catch (IOException ignored) {
-        }
-      }
-    }
-
-    private class FaultHidingOutputStream extends FilterOutputStream {
-      private FaultHidingOutputStream(OutputStream out) {
-        super(out);
-      }
-
-      @Override public void write(int oneByte) {
-        try {
-          out.write(oneByte);
-        } catch (IOException e) {
-          hasErrors = true;
-        }
-      }
-
-      @Override public void write(byte[] buffer, int offset, int length) {
-        try {
-          out.write(buffer, offset, length);
-        } catch (IOException e) {
-          hasErrors = true;
-        }
-      }
-
-      @Override public void close() {
-        try {
-          out.close();
-        } catch (IOException e) {
-          hasErrors = true;
-        }
-      }
-
-      @Override public void flush() {
-        try {
-          out.flush();
-        } catch (IOException e) {
-          hasErrors = true;
         }
       }
     }
