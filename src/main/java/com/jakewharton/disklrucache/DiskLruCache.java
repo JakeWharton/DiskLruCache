@@ -31,7 +31,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -885,8 +884,8 @@ public final class DiskLruCache implements Closeable {
     private final long[] lengths;
 
     /** Memoized File objects for this entry to avoid char[] allocations */
-    private final Map<Integer, File> indexToCleanFile = new HashMap<Integer, File>();
-    private final Map<Integer, File> indexToDirtyFile = new HashMap<Integer, File>();
+    File[] cleanFiles;
+    File[] dirtyFiles;
 
     /** True if this entry has ever been published. */
     private boolean readable;
@@ -900,6 +899,19 @@ public final class DiskLruCache implements Closeable {
     private Entry(String key) {
       this.key = key;
       this.lengths = new long[valueCount];
+      cleanFiles = new File[valueCount];
+      dirtyFiles = new File[valueCount];
+
+      // The names are repetitive so re-use the same builder to avoid allocations.
+      StringBuilder fileBuilder = new StringBuilder(key).append('.');
+      int truncateTo = fileBuilder.length();
+      for (int i = 0; i < valueCount; i++) {
+          fileBuilder.append(i);
+          cleanFiles[i] = new File(directory, fileBuilder.toString());
+          fileBuilder.append(".tmp");
+          dirtyFiles[i] = new File(directory, fileBuilder.toString());
+          fileBuilder.setLength(truncateTo);
+      }
     }
 
     public String getLengths() throws IOException {
@@ -930,21 +942,11 @@ public final class DiskLruCache implements Closeable {
     }
 
     public File getCleanFile(int i) {
-      File file = indexToCleanFile.get(i);
-      if (file == null) {
-        file = new File(directory, key + "." + i);
-        indexToCleanFile.put(i, file);
-      }
-      return file;
+      return cleanFiles[i];
     }
 
     public File getDirtyFile(int i) {
-      File file = indexToDirtyFile.get(i);
-      if (file == null) {
-        file = new File(directory, key + "." + i + ".tmp");
-        indexToDirtyFile.put(i, file);
-      }
-      return file;
+      return dirtyFiles[i];
     }
   }
 }
