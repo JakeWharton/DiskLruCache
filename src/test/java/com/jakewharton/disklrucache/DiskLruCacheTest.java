@@ -864,9 +864,9 @@ public final class DiskLruCacheTest {
     set("a", "a", "a");
     set("b", "b", "b");
     DiskLruCache.Editor a = cache.get("a").edit();
-    a.set(1, "a1");
+    a.set(0, "a1");
     FileUtils.deleteDirectory(cacheDir);
-    a.set(2, "a2");
+    a.set(1, "a2");
     a.commit();
     assertThat(cache.get("a")).isNull();
   }
