@@ -420,7 +420,10 @@ public final class DiskLruCache implements Closeable {
     }
 
     redundantOpCount++;
-    journalWriter.append(READ + ' ' + key + '\n');
+    journalWriter.append(READ);
+    journalWriter.append(' ');
+    journalWriter.append(key);
+    journalWriter.append('\n');
     if (journalRebuildRequired()) {
       executorService.submit(cleanupCallable);
     }
@@ -455,7 +458,10 @@ public final class DiskLruCache implements Closeable {
     entry.currentEditor = editor;
 
     // Flush the journal before creating files to prevent file leaks.
-    journalWriter.write(DIRTY + ' ' + key + '\n');
+    journalWriter.append(DIRTY);
+    journalWriter.append(' ');
+    journalWriter.append(key);
+    journalWriter.append('\n');
     journalWriter.flush();
     return editor;
   }
@@ -531,13 +537,21 @@ public final class DiskLruCache implements Closeable {
     entry.currentEditor = null;
     if (entry.readable | success) {
       entry.readable = true;
-      journalWriter.write(CLEAN + ' ' + entry.key + entry.getLengths() + '\n');
+      journalWriter.append(CLEAN);
+      journalWriter.append(' ');
+      journalWriter.append(entry.key);
+      journalWriter.append(entry.getLengths());
+      journalWriter.append('\n');
+
       if (success) {
         entry.sequenceNumber = nextSequenceNumber++;
       }
     } else {
       lruEntries.remove(entry.key);
-      journalWriter.write(REMOVE + ' ' + entry.key + '\n');
+      journalWriter.append(REMOVE);
+      journalWriter.append(' ');
+      journalWriter.append(entry.key);
+      journalWriter.append('\n');
     }
     journalWriter.flush();
 
@@ -580,7 +594,11 @@ public final class DiskLruCache implements Closeable {
     }
 
     redundantOpCount++;
-    journalWriter.append(REMOVE + ' ' + key + '\n');
+    journalWriter.append(REMOVE);
+    journalWriter.append(' ');
+    journalWriter.append(key);
+    journalWriter.append('\n');
+
     lruEntries.remove(key);
 
     if (journalRebuildRequired()) {
