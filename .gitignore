@@ -17,3 +17,6 @@ pom.xml.*
 
 #OSX
 .DS_Store
+
+#gradle
+build/**
