@@ -37,7 +37,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -402,7 +401,6 @@ public final class DiskLruCache implements Closeable {
    */
   public synchronized Value get(String key) throws IOException {
     checkNotClosed();
-    validateKey(key);
     Entry entry = lruEntries.get(key);
     if (entry == null) {
       return null;
@@ -441,7 +439,6 @@ public final class DiskLruCache implements Closeable {
 
   private synchronized Editor edit(String key, long expectedSequenceNumber) throws IOException {
     checkNotClosed();
-    validateKey(key);
     Entry entry = lruEntries.get(key);
     if (expectedSequenceNumber != ANY_SEQUENCE_NUMBER && (entry == null
         || entry.sequenceNumber != expectedSequenceNumber)) {
@@ -578,7 +575,6 @@ public final class DiskLruCache implements Closeable {
    */
   public synchronized boolean remove(String key) throws IOException {
     checkNotClosed();
-    validateKey(key);
     Entry entry = lruEntries.get(key);
     if (entry == null || entry.currentEditor != null) {
       return false;
@@ -656,13 +652,6 @@ public final class DiskLruCache implements Closeable {
   public void delete() throws IOException {
     close();
     Util.deleteContents(directory);
-  }
-
-  private void validateKey(String key) {
-    Matcher matcher = LEGAL_KEY_PATTERN.matcher(key);
-    if (!matcher.matches()) {
-      throw new IllegalArgumentException("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
-    }
   }
 
   private static String inputStreamToString(InputStream in) throws IOException {
