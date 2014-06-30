@@ -401,7 +401,7 @@ public final class DiskLruCache implements Closeable {
    * exist is not currently readable. If a value is returned, it is moved to
    * the head of the LRU queue.
    */
-  public synchronized Snapshot get(String key) throws IOException {
+  public synchronized Value get(String key) throws IOException {
     checkNotClosed();
     validateKey(key);
     Entry entry = lruEntries.get(key);
@@ -413,24 +413,11 @@ public final class DiskLruCache implements Closeable {
       return null;
     }
 
-    // Open all streams eagerly to guarantee that we see a single published
-    // snapshot. If we opened streams lazily then the streams could come
-    // from different edits.
-    InputStream[] ins = new InputStream[valueCount];
-    try {
-      for (int i = 0; i < valueCount; i++) {
-        ins[i] = new FileInputStream(entry.getCleanFile(i));
-      }
-    } catch (FileNotFoundException e) {
-      // A file must have been deleted manually!
-      for (int i = 0; i < valueCount; i++) {
-        if (ins[i] != null) {
-          Util.closeQuietly(ins[i]);
-        } else {
-          break;
+    for (File file : entry.cleanFiles) {
+        // A file must have been deleted manually!
+        if (!file.exists()) {
+            return null;
         }
-      }
-      return null;
     }
 
     redundantOpCount++;
@@ -439,7 +426,7 @@ public final class DiskLruCache implements Closeable {
       executorService.submit(cleanupCallable);
     }
 
-    return new Snapshot(key, entry.sequenceNumber, ins, entry.lengths);
+    return new Value(key, entry.sequenceNumber, entry.cleanFiles, entry.lengths);
   }
 
   /**
@@ -456,7 +443,7 @@ public final class DiskLruCache implements Closeable {
     Entry entry = lruEntries.get(key);
     if (expectedSequenceNumber != ANY_SEQUENCE_NUMBER && (entry == null
         || entry.sequenceNumber != expectedSequenceNumber)) {
-      return null; // Snapshot is stale.
+      return null; // Value is stale.
     }
     if (entry == null) {
       entry = new Entry(key);
@@ -666,16 +653,16 @@ public final class DiskLruCache implements Closeable {
   }
 
   /** A snapshot of the values for an entry. */
-  public final class Snapshot implements Closeable {
+  public final class Value {
     private final String key;
     private final long sequenceNumber;
-    private final InputStream[] ins;
     private final long[] lengths;
+    private final File[] files;
 
-    private Snapshot(String key, long sequenceNumber, InputStream[] ins, long[] lengths) {
+      private Value(String key, long sequenceNumber, File[] files, long[] lengths) {
       this.key = key;
       this.sequenceNumber = sequenceNumber;
-      this.ins = ins;
+      this.files = files;
       this.lengths = lengths;
     }
 
@@ -688,25 +675,19 @@ public final class DiskLruCache implements Closeable {
       return DiskLruCache.this.edit(key, sequenceNumber);
     }
 
-    /** Returns the unbuffered stream with the value for {@code index}. */
-    public InputStream getInputStream(int index) {
-      return ins[index];
+    public File getFile(int index) {
+        return files[index];
     }
 
     /** Returns the string value for {@code index}. */
     public String getString(int index) throws IOException {
-      return inputStreamToString(getInputStream(index));
+      InputStream is = new FileInputStream(files[index]);
+      return inputStreamToString(is);
     }
 
     /** Returns the byte length of the value for {@code index}. */
     public long getLength(int index) {
       return lengths[index];
-    }
-
-    public void close() {
-      for (InputStream in : ins) {
-        Util.closeQuietly(in);
-      }
     }
   }
 
