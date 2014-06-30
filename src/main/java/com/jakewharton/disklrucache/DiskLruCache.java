@@ -766,6 +766,11 @@ public final class DiskLruCache implements Closeable {
      * IOExceptions.
      */
     public OutputStream newOutputStream(int index) throws IOException {
+      if (index < 0 || index >= valueCount) {
+        throw new IllegalArgumentException("Expected index " + index + " to "
+                + "be greater than 0 and less than the maximum value count "
+                + "of " + valueCount);
+      }
       synchronized (DiskLruCache.this) {
         if (entry.currentEditor != this) {
           throw new IllegalStateException();
