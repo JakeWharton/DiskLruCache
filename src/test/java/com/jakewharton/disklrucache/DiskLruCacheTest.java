@@ -33,6 +33,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE;
 import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE_BACKUP;
@@ -355,8 +356,9 @@ public final class DiskLruCacheTest {
     set("b", "bb", "bbbb"); // size 6
     set("c", "c", "c"); // size 12
     cache.setMaxSize(10);
-    assertThat(cache.executorService.getTaskCount()).isEqualTo(1);
-    cache.executorService.purge();
+    cache.executorService.shutdown();
+    assertThat(cache.executorService.awaitTermination(2, TimeUnit.SECONDS)).isTrue();
+    assertThat(cache.size()).isLessThanOrEqualTo(10);
   }
 
   @Test public void evictOnInsert() throws Exception {
