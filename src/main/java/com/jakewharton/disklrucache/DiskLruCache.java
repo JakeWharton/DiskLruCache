@@ -770,9 +770,10 @@ public final class DiskLruCache implements Closeable {
      * edit lock so another edit may be started on the same key.
      */
     public void commit() throws IOException {
-      // The object using this Editor must catch and handle any errors during the write. If there is an error and
-      // they call commit anyway, we will assume whatever they managed to write was valid. Normally they should call
-      // abort.
+      // The object using this Editor must catch and handle any errors
+      // during the write. If there is an error and they call commit
+      // anyway, we will assume whatever they managed to write was valid.
+      // Normally they should call abort.
       completeEdit(this, true);
       committed = true;
     }
@@ -801,7 +802,7 @@ public final class DiskLruCache implements Closeable {
     /** Lengths of this entry's files. */
     private final long[] lengths;
 
-    /** Memoized File objects for this entry to avoid char[] allocations */
+    /** Memoized File objects for this entry to avoid char[] allocations. */
     File[] cleanFiles;
     File[] dirtyFiles;
 

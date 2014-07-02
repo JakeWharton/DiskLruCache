@@ -47,7 +47,7 @@ public final class DiskLruCacheTest {
   private File journalFile;
   private File journalBkpFile;
   private DiskLruCache cache;
-  
+
   @Rule public TemporaryFolder tempDir = new TemporaryFolder();
 
   @Before public void setUp() throws Exception {

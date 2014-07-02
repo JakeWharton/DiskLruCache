@@ -1,5 +1,9 @@
 apply plugin: 'java'
 
+checkstyle {
+    configFile = new File(projectDir, 'checkstyle.xml')
+}
+
 dependencies {
     testCompile 'junit:junit:4.10'
     testCompile 'commons-io:commons-io:2.1'
