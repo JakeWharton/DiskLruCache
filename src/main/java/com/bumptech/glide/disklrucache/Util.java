@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.jakewharton.disklrucache;
+package com.bumptech.glide.disklrucache;
 
 import java.io.Closeable;
 import java.io.File;

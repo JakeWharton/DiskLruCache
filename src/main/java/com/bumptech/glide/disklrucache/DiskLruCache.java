@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.jakewharton.disklrucache;
+package com.bumptech.glide.disklrucache;
 
 import java.io.BufferedWriter;
 import java.io.Closeable;
@@ -37,7 +37,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
  * A cache that uses a bounded amount of space on a filesystem. Each cache
@@ -90,7 +89,6 @@ public final class DiskLruCache implements Closeable {
   static final String MAGIC = "libcore.io.DiskLruCache";
   static final String VERSION_1 = "1";
   static final long ANY_SEQUENCE_NUMBER = -1;
-  static final Pattern LEGAL_KEY_PATTERN = Pattern.compile("[a-z0-9_-]{1,64}");
   private static final String CLEAN = "CLEAN";
   private static final String DIRTY = "DIRTY";
   private static final String REMOVE = "REMOVE";

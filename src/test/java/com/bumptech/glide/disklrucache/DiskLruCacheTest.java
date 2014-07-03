@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.jakewharton.disklrucache;
+package com.bumptech.glide.disklrucache;
+
+import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
+import org.fest.assertions.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,12 +38,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE;
-import static com.jakewharton.disklrucache.DiskLruCache.JOURNAL_FILE_BACKUP;
-import static com.jakewharton.disklrucache.DiskLruCache.MAGIC;
-import static com.jakewharton.disklrucache.DiskLruCache.VERSION_1;
-import static org.fest.assertions.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static com.bumptech.glide.disklrucache.DiskLruCache.JOURNAL_FILE;
+import static com.bumptech.glide.disklrucache.DiskLruCache.JOURNAL_FILE_BACKUP;
+import static com.bumptech.glide.disklrucache.DiskLruCache.MAGIC;
+import static com.bumptech.glide.disklrucache.DiskLruCache.VERSION_1;
 
 public final class DiskLruCacheTest {
   private final int appVersion = 100;
@@ -74,15 +75,15 @@ public final class DiskLruCacheTest {
     DiskLruCache.Editor creator = cache.edit("k1");
     creator.set(0, "ABC");
     creator.set(1, "DE");
-    assertThat(creator.getString(0)).isNull();
-    assertThat(creator.getString(1)).isNull();
+    Assertions.assertThat(creator.getString(0)).isNull();
+    Assertions.assertThat(creator.getString(1)).isNull();
     creator.commit();
 
     DiskLruCache.Value value = cache.get("k1");
-    assertThat(value.getString(0)).isEqualTo("ABC");
-    assertThat(value.getLength(0)).isEqualTo(3);
-    assertThat(value.getString(1)).isEqualTo("DE");
-    assertThat(value.getLength(1)).isEqualTo(2);
+    Assertions.assertThat(value.getString(0)).isEqualTo("ABC");
+    Assertions.assertThat(value.getLength(0)).isEqualTo(3);
+    Assertions.assertThat(value.getString(1)).isEqualTo("DE");
+    Assertions.assertThat(value.getLength(1)).isEqualTo(2);
   }
 
   @Test public void readAndWriteEntryAcrossCacheOpenAndClose() throws Exception {
@@ -94,10 +95,10 @@ public final class DiskLruCacheTest {
 
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
     DiskLruCache.Value value = cache.get("k1");
-    assertThat(value.getString(0)).isEqualTo("A");
-    assertThat(value.getLength(0)).isEqualTo(1);
-    assertThat(value.getString(1)).isEqualTo("B");
-    assertThat(value.getLength(1)).isEqualTo(1);
+    Assertions.assertThat(value.getString(0)).isEqualTo("A");
+    Assertions.assertThat(value.getLength(0)).isEqualTo(1);
+    Assertions.assertThat(value.getString(1)).isEqualTo("B");
+    Assertions.assertThat(value.getLength(1)).isEqualTo(1);
   }
 
   @Test public void readAndWriteEntryWithoutProperClose() throws Exception {
@@ -109,10 +110,10 @@ public final class DiskLruCacheTest {
     // Simulate a dirty close of 'cache' by opening the cache directory again.
     DiskLruCache cache2 = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
     DiskLruCache.Value value = cache2.get("k1");
-    assertThat(value.getString(0)).isEqualTo("A");
-    assertThat(value.getLength(0)).isEqualTo(1);
-    assertThat(value.getString(1)).isEqualTo("B");
-    assertThat(value.getLength(1)).isEqualTo(1);
+    Assertions.assertThat(value.getString(0)).isEqualTo("A");
+    Assertions.assertThat(value.getLength(0)).isEqualTo(1);
+    Assertions.assertThat(value.getString(1)).isEqualTo("B");
+    Assertions.assertThat(value.getLength(1)).isEqualTo(1);
     cache2.close();
   }
 
@@ -144,7 +145,7 @@ public final class DiskLruCacheTest {
 
   @Test public void journalDoesNotIncludeReadOfYetUnpublishedValue() throws Exception {
     DiskLruCache.Editor creator = cache.edit("k1");
-    assertThat(cache.get("k1")).isNull();
+    Assertions.assertThat(cache.get("k1")).isNull();
     creator.set(0, "A");
     creator.set(1, "BC");
     creator.commit();
@@ -188,9 +189,9 @@ public final class DiskLruCacheTest {
     editor.set(1, "B");
     editor.commit();
     File k1 = getCleanFile("k1", 0);
-    assertThat(readFile(k1)).isEqualTo("ABC");
+    Assertions.assertThat(readFile(k1)).isEqualTo("ABC");
     cache.remove("k1");
-    assertThat(k1.exists()).isFalse();
+    Assertions.assertThat(k1.exists()).isFalse();
   }
 
   @Test public void openWithDirtyKeyDeletesAllFilesForThatKey() throws Exception {
@@ -205,11 +206,11 @@ public final class DiskLruCacheTest {
     writeFile(dirtyFile1, "D");
     createJournal("CLEAN k1 1 1", "DIRTY   k1");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
-    assertThat(cleanFile0.exists()).isFalse();
-    assertThat(cleanFile1.exists()).isFalse();
-    assertThat(dirtyFile0.exists()).isFalse();
-    assertThat(dirtyFile1.exists()).isFalse();
-    assertThat(cache.get("k1")).isNull();
+    Assertions.assertThat(cleanFile0.exists()).isFalse();
+    Assertions.assertThat(cleanFile1.exists()).isFalse();
+    Assertions.assertThat(dirtyFile0.exists()).isFalse();
+    Assertions.assertThat(dirtyFile1.exists()).isFalse();
+    Assertions.assertThat(cache.get("k1")).isNull();
   }
 
   @Test public void openWithInvalidVersionClearsDirectory() throws Exception {
@@ -250,7 +251,7 @@ public final class DiskLruCacheTest {
     createJournal("CLEAN k1 1 1", "BOGUS");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
     assertGarbageFilesAllDeleted();
-    assertThat(cache.get("k1")).isNull();
+    Assertions.assertThat(cache.get("k1")).isNull();
   }
 
   @Test public void openWithInvalidFileSizeClearsDirectory() throws Exception {
@@ -259,7 +260,7 @@ public final class DiskLruCacheTest {
     createJournal("CLEAN k1 0000x001 1");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
     assertGarbageFilesAllDeleted();
-    assertThat(cache.get("k1")).isNull();
+    Assertions.assertThat(cache.get("k1")).isNull();
   }
 
   @Test public void openWithTruncatedLineDiscardsThatLine() throws Exception {
@@ -270,7 +271,7 @@ public final class DiskLruCacheTest {
     writer.write(MAGIC + "\n" + VERSION_1 + "\n100\n2\n\nCLEAN k1 1 1"); // no trailing newline
     writer.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
-    assertThat(cache.get("k1")).isNull();
+    Assertions.assertThat(cache.get("k1")).isNull();
   }
 
   @Test public void openWithTooManyFileSizesClearsDirectory() throws Exception {
@@ -279,13 +280,13 @@ public final class DiskLruCacheTest {
     createJournal("CLEAN k1 1 1 1");
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
     assertGarbageFilesAllDeleted();
-    assertThat(cache.get("k1")).isNull();
+    Assertions.assertThat(cache.get("k1")).isNull();
   }
 
   @Test public void nullKeyThrows() throws Exception {
     try {
       cache.edit(null);
-      fail();
+      Assert.fail();
     } catch (NullPointerException expected) {
     }
   }
@@ -295,15 +296,15 @@ public final class DiskLruCacheTest {
     creator.set(1, "A");
     try {
       creator.commit();
-      fail();
+      Assert.fail();
     } catch (IllegalStateException expected) {
     }
 
-    assertThat(getCleanFile("k1", 0).exists()).isFalse();
-    assertThat(getCleanFile("k1", 1).exists()).isFalse();
-    assertThat(getDirtyFile("k1", 0).exists()).isFalse();
-    assertThat(getDirtyFile("k1", 1).exists()).isFalse();
-    assertThat(cache.get("k1")).isNull();
+    Assertions.assertThat(getCleanFile("k1", 0).exists()).isFalse();
+    Assertions.assertThat(getCleanFile("k1", 1).exists()).isFalse();
+    Assertions.assertThat(getDirtyFile("k1", 0).exists()).isFalse();
+    Assertions.assertThat(getDirtyFile("k1", 1).exists()).isFalse();
+    Assertions.assertThat(cache.get("k1")).isNull();
 
     DiskLruCache.Editor creator2 = cache.edit("k1");
     creator2.set(0, "B");
@@ -315,11 +316,11 @@ public final class DiskLruCacheTest {
     DiskLruCache.Editor creator = cache.edit("k1");
     creator.set(1, "A");
     creator.abort();
-    assertThat(getCleanFile("k1", 0).exists()).isFalse();
-    assertThat(getCleanFile("k1", 1).exists()).isFalse();
-    assertThat(getDirtyFile("k1", 0).exists()).isFalse();
-    assertThat(getDirtyFile("k1", 1).exists()).isFalse();
-    assertThat(cache.get("k1")).isNull();
+    Assertions.assertThat(getCleanFile("k1", 0).exists()).isFalse();
+    Assertions.assertThat(getCleanFile("k1", 1).exists()).isFalse();
+    Assertions.assertThat(getDirtyFile("k1", 0).exists()).isFalse();
+    Assertions.assertThat(getDirtyFile("k1", 1).exists()).isFalse();
+    Assertions.assertThat(cache.get("k1")).isNull();
   }
 
   @Test public void updateExistingEntryWithTooFewValuesReusesPreviousValues() throws Exception {
@@ -333,10 +334,10 @@ public final class DiskLruCacheTest {
     updater.commit();
 
     DiskLruCache.Value value = cache.get("k1");
-    assertThat(value.getString(0)).isEqualTo("C");
-    assertThat(value.getLength(0)).isEqualTo(1);
-    assertThat(value.getString(1)).isEqualTo("B");
-    assertThat(value.getLength(1)).isEqualTo(1);
+    Assertions.assertThat(value.getString(0)).isEqualTo("C");
+    Assertions.assertThat(value.getLength(0)).isEqualTo(1);
+    Assertions.assertThat(value.getString(1)).isEqualTo("B");
+    Assertions.assertThat(value.getLength(1)).isEqualTo(1);
   }
 
   @Test public void growMaxSize() throws Exception {
@@ -346,7 +347,7 @@ public final class DiskLruCacheTest {
     set("b", "bb", "bbbb"); // size 6
     cache.setMaxSize(20);
     set("c", "c", "c"); // size 12
-    assertThat(cache.size()).isEqualTo(12);
+    Assertions.assertThat(cache.size()).isEqualTo(12);
   }
 
   @Test public void shrinkMaxSizeEvicts() throws Exception {
@@ -357,8 +358,8 @@ public final class DiskLruCacheTest {
     set("c", "c", "c"); // size 12
     cache.setMaxSize(10);
     cache.executorService.shutdown();
-    assertThat(cache.executorService.awaitTermination(2, TimeUnit.SECONDS)).isTrue();
-    assertThat(cache.size()).isLessThanOrEqualTo(10);
+    Assertions.assertThat(cache.executorService.awaitTermination(2, TimeUnit.SECONDS)).isTrue();
+    Assertions.assertThat(cache.size()).isLessThanOrEqualTo(10);
   }
 
   @Test public void evictOnInsert() throws Exception {
@@ -367,12 +368,12 @@ public final class DiskLruCacheTest {
 
     set("a", "a", "aaa"); // size 4
     set("b", "bb", "bbbb"); // size 6
-    assertThat(cache.size()).isEqualTo(10);
+    Assertions.assertThat(cache.size()).isEqualTo(10);
 
     // Cause the size to grow to 12 should evict 'A'.
     set("c", "c", "c");
     cache.flush();
-    assertThat(cache.size()).isEqualTo(8);
+    Assertions.assertThat(cache.size()).isEqualTo(8);
     assertAbsent("a");
     assertValue("b", "bb", "bbbb");
     assertValue("c", "c", "c");
@@ -380,7 +381,7 @@ public final class DiskLruCacheTest {
     // Causing the size to grow to 10 should evict nothing.
     set("d", "d", "d");
     cache.flush();
-    assertThat(cache.size()).isEqualTo(10);
+    Assertions.assertThat(cache.size()).isEqualTo(10);
     assertAbsent("a");
     assertValue("b", "bb", "bbbb");
     assertValue("c", "c", "c");
@@ -389,7 +390,7 @@ public final class DiskLruCacheTest {
     // Causing the size to grow to 18 should evict 'B' and 'C'.
     set("e", "eeee", "eeee");
     cache.flush();
-    assertThat(cache.size()).isEqualTo(10);
+    Assertions.assertThat(cache.size()).isEqualTo(10);
     assertAbsent("a");
     assertAbsent("b");
     assertAbsent("c");
@@ -404,12 +405,12 @@ public final class DiskLruCacheTest {
     set("a", "a", "aa"); // size 3
     set("b", "b", "bb"); // size 3
     set("c", "c", "cc"); // size 3
-    assertThat(cache.size()).isEqualTo(9);
+    Assertions.assertThat(cache.size()).isEqualTo(9);
 
     // Causing the size to grow to 11 should evict 'A'.
     set("b", "b", "bbbb");
     cache.flush();
-    assertThat(cache.size()).isEqualTo(8);
+    Assertions.assertThat(cache.size()).isEqualTo(8);
     assertAbsent("a");
     assertValue("b", "b", "bbbb");
     assertValue("c", "c", "cc");
@@ -430,7 +431,7 @@ public final class DiskLruCacheTest {
     // Causing the size to grow to 12 should evict 'C'.
     set("g", "g", "g");
     cache.flush();
-    assertThat(cache.size()).isEqualTo(10);
+    Assertions.assertThat(cache.size()).isEqualTo(10);
     assertAbsent("a");
     assertValue("b", "b", "b");
     assertAbsent("c");
@@ -447,13 +448,13 @@ public final class DiskLruCacheTest {
     set("e", "e", "e");
     set("f", "f", "f");
     cache.get("b"); // 'B' is now least recently used.
-    assertThat(cache.size()).isEqualTo(12);
+    Assertions.assertThat(cache.size()).isEqualTo(12);
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
 
     set("g", "g", "g");
     cache.flush();
-    assertThat(cache.size()).isEqualTo(10);
+    Assertions.assertThat(cache.size()).isEqualTo(10);
     assertAbsent("a");
     assertValue("b", "b", "b");
     assertAbsent("c");
@@ -482,7 +483,7 @@ public final class DiskLruCacheTest {
   @Test public void constructorDoesNotAllowZeroCacheSize() throws Exception {
     try {
       DiskLruCache.open(cacheDir, appVersion, 2, 0);
-      fail();
+      Assert.fail();
     } catch (IllegalArgumentException expected) {
     }
   }
@@ -490,7 +491,7 @@ public final class DiskLruCacheTest {
   @Test public void constructorDoesNotAllowZeroValuesPerEntry() throws Exception {
     try {
       DiskLruCache.open(cacheDir, appVersion, 0, 10);
-      fail();
+      Assert.fail();
     } catch (IllegalArgumentException expected) {
     }
   }
@@ -502,7 +503,7 @@ public final class DiskLruCacheTest {
   @Test public void readingTheSameFileMultipleTimes() throws Exception {
     set("a", "a", "b");
     DiskLruCache.Value value = cache.get("a");
-    assertThat(value.getFile(0)).isSameAs(value.getFile(0));
+    Assertions.assertThat(value.getFile(0)).isSameAs(value.getFile(0));
   }
 
   @Test public void rebuildJournalOnRepeatedReads() throws Exception {
@@ -590,19 +591,19 @@ public final class DiskLruCacheTest {
     creator.commit();
     cache.close();
 
-    assertThat(journalFile.renameTo(journalBkpFile)).isTrue();
-    assertThat(journalFile.exists()).isFalse();
+    Assertions.assertThat(journalFile.renameTo(journalBkpFile)).isTrue();
+    Assertions.assertThat(journalFile.exists()).isFalse();
 
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
 
     DiskLruCache.Value value = cache.get("k1");
-    assertThat(value.getString(0)).isEqualTo("ABC");
-    assertThat(value.getLength(0)).isEqualTo(3);
-    assertThat(value.getString(1)).isEqualTo("DE");
-    assertThat(value.getLength(1)).isEqualTo(2);
+    Assertions.assertThat(value.getString(0)).isEqualTo("ABC");
+    Assertions.assertThat(value.getLength(0)).isEqualTo(3);
+    Assertions.assertThat(value.getString(1)).isEqualTo("DE");
+    Assertions.assertThat(value.getLength(1)).isEqualTo(2);
 
-    assertThat(journalBkpFile.exists()).isFalse();
-    assertThat(journalFile.exists()).isTrue();
+    Assertions.assertThat(journalBkpFile.exists()).isFalse();
+    Assertions.assertThat(journalFile.exists()).isTrue();
   }
 
   @Test public void journalFileIsPreferredOverBackupFile() throws Exception {
@@ -620,25 +621,25 @@ public final class DiskLruCacheTest {
     creator.commit();
     cache.close();
 
-    assertThat(journalFile.exists()).isTrue();
-    assertThat(journalBkpFile.exists()).isTrue();
+    Assertions.assertThat(journalFile.exists()).isTrue();
+    Assertions.assertThat(journalBkpFile.exists()).isTrue();
 
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
 
     DiskLruCache.Value valueA = cache.get("k1");
-    assertThat(valueA.getString(0)).isEqualTo("ABC");
-    assertThat(valueA.getLength(0)).isEqualTo(3);
-    assertThat(valueA.getString(1)).isEqualTo("DE");
-    assertThat(valueA.getLength(1)).isEqualTo(2);
+    Assertions.assertThat(valueA.getString(0)).isEqualTo("ABC");
+    Assertions.assertThat(valueA.getLength(0)).isEqualTo(3);
+    Assertions.assertThat(valueA.getString(1)).isEqualTo("DE");
+    Assertions.assertThat(valueA.getLength(1)).isEqualTo(2);
 
     DiskLruCache.Value valueB = cache.get("k2");
-    assertThat(valueB.getString(0)).isEqualTo("F");
-    assertThat(valueB.getLength(0)).isEqualTo(1);
-    assertThat(valueB.getString(1)).isEqualTo("GH");
-    assertThat(valueB.getLength(1)).isEqualTo(2);
+    Assertions.assertThat(valueB.getString(0)).isEqualTo("F");
+    Assertions.assertThat(valueB.getLength(0)).isEqualTo(1);
+    Assertions.assertThat(valueB.getString(1)).isEqualTo("GH");
+    Assertions.assertThat(valueB.getLength(1)).isEqualTo(2);
 
-    assertThat(journalBkpFile.exists()).isFalse();
-    assertThat(journalFile.exists()).isTrue();
+    Assertions.assertThat(journalBkpFile.exists()).isFalse();
+    Assertions.assertThat(journalFile.exists()).isTrue();
   }
 
   @Test public void openCreatesDirectoryIfNecessary() throws Exception {
@@ -646,15 +647,15 @@ public final class DiskLruCacheTest {
     File dir = tempDir.newFolder("testOpenCreatesDirectoryIfNecessary");
     cache = DiskLruCache.open(dir, appVersion, 2, Integer.MAX_VALUE);
     set("a", "a", "a");
-    assertThat(new File(dir, "a.0").exists()).isTrue();
-    assertThat(new File(dir, "a.1").exists()).isTrue();
-    assertThat(new File(dir, "journal").exists()).isTrue();
+    Assertions.assertThat(new File(dir, "a.0").exists()).isTrue();
+    Assertions.assertThat(new File(dir, "a.1").exists()).isTrue();
+    Assertions.assertThat(new File(dir, "journal").exists()).isTrue();
   }
 
   @Test public void fileDeletedExternally() throws Exception {
     set("a", "a", "a");
     getCleanFile("a", 1).delete();
-    assertThat(cache.get("a")).isNull();
+    Assertions.assertThat(cache.get("a")).isNull();
   }
 
   @Test public void editSameVersion() throws Exception {
@@ -684,7 +685,7 @@ public final class DiskLruCacheTest {
     DiskLruCache.Editor toAbort = value.edit();
     toAbort.set(0, "b");
     toAbort.commit();
-    assertThat(value.edit()).isNull();
+    Assertions.assertThat(value.edit()).isNull();
   }
 
   @Test public void editSinceEvicted() throws Exception {
@@ -695,7 +696,7 @@ public final class DiskLruCacheTest {
     set("b", "bb", "bbb"); // size 5
     set("c", "cc", "ccc"); // size 5; will evict 'A'
     cache.flush();
-    assertThat(value.edit()).isNull();
+    Assertions.assertThat(value.edit()).isNull();
   }
 
   @Test public void editSinceEvictedAndRecreated() throws Exception {
@@ -707,7 +708,7 @@ public final class DiskLruCacheTest {
     set("c", "cc", "ccc"); // size 5; will evict 'A'
     set("a", "a", "aaaa"); // size 5; will evict 'B'
     cache.flush();
-    assertThat(value.edit()).isNull();
+    Assertions.assertThat(value.edit()).isNull();
   }
 
   /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a> */
@@ -741,13 +742,13 @@ public final class DiskLruCacheTest {
     FileUtils.deleteDirectory(cacheDir);
     a.set(1, "a2");
     a.commit();
-    assertThat(cache.get("a")).isNull();
+    Assertions.assertThat(cache.get("a")).isNull();
   }
 
   /** @see <a href="https://github.com/JakeWharton/DiskLruCache/issues/2">Issue #2</a> */
   @Test public void aggressiveClearingHandlesRead() throws Exception {
     FileUtils.deleteDirectory(cacheDir);
-    assertThat(cache.get("a")).isNull();
+    Assertions.assertThat(cache.get("a")).isNull();
   }
 
   private void assertJournalEquals(String... expectedBodyLines) throws Exception {
@@ -758,7 +759,7 @@ public final class DiskLruCacheTest {
     expectedLines.add("2");
     expectedLines.add("");
     expectedLines.addAll(Arrays.asList(expectedBodyLines));
-    assertThat(readJournalLines()).isEqualTo(expectedLines);
+    Assertions.assertThat(readJournalLines()).isEqualTo(expectedLines);
   }
 
   private void createJournal(String... bodyLines) throws Exception {
@@ -820,27 +821,27 @@ public final class DiskLruCacheTest {
   private static void assertInoperable(DiskLruCache.Editor editor) throws Exception {
     try {
       editor.getString(0);
-      fail();
+      Assert.fail();
     } catch (IllegalStateException expected) {
     }
     try {
       editor.set(0, "A");
-      fail();
+      Assert.fail();
     } catch (IllegalStateException expected) {
     }
     try {
       editor.getFile(0);
-      fail();
+      Assert.fail();
     } catch (IllegalStateException expected) {
     }
     try {
       editor.commit();
-      fail();
+      Assert.fail();
     } catch (IllegalStateException expected) {
     }
     try {
       editor.abort();
-      fail();
+      Assert.fail();
     } catch (IllegalStateException expected) {
     }
   }
@@ -860,12 +861,12 @@ public final class DiskLruCacheTest {
   }
 
   private void assertGarbageFilesAllDeleted() throws Exception {
-    assertThat(getCleanFile("g1", 0)).doesNotExist();
-    assertThat(getCleanFile("g1", 1)).doesNotExist();
-    assertThat(getCleanFile("g2", 0)).doesNotExist();
-    assertThat(getCleanFile("g2", 1)).doesNotExist();
-    assertThat(new File(cacheDir, "otherFile0")).doesNotExist();
-    assertThat(new File(cacheDir, "dir1")).doesNotExist();
+    Assertions.assertThat(getCleanFile("g1", 0)).doesNotExist();
+    Assertions.assertThat(getCleanFile("g1", 1)).doesNotExist();
+    Assertions.assertThat(getCleanFile("g2", 0)).doesNotExist();
+    Assertions.assertThat(getCleanFile("g2", 1)).doesNotExist();
+    Assertions.assertThat(new File(cacheDir, "otherFile0")).doesNotExist();
+    Assertions.assertThat(new File(cacheDir, "dir1")).doesNotExist();
   }
 
   private void set(String key, String value0, String value1) throws Exception {
@@ -878,21 +879,21 @@ public final class DiskLruCacheTest {
   private void assertAbsent(String key) throws Exception {
     DiskLruCache.Value value = cache.get(key);
     if (value != null) {
-      fail();
+      Assert.fail();
     }
-    assertThat(getCleanFile(key, 0)).doesNotExist();
-    assertThat(getCleanFile(key, 1)).doesNotExist();
-    assertThat(getDirtyFile(key, 0)).doesNotExist();
-    assertThat(getDirtyFile(key, 1)).doesNotExist();
+    Assertions.assertThat(getCleanFile(key, 0)).doesNotExist();
+    Assertions.assertThat(getCleanFile(key, 1)).doesNotExist();
+    Assertions.assertThat(getDirtyFile(key, 0)).doesNotExist();
+    Assertions.assertThat(getDirtyFile(key, 1)).doesNotExist();
   }
 
   private void assertValue(String key, String value0, String value1) throws Exception {
     DiskLruCache.Value value = cache.get(key);
-    assertThat(value.getString(0)).isEqualTo(value0);
-    assertThat(value.getLength(0)).isEqualTo(value0.length());
-    assertThat(value.getString(1)).isEqualTo(value1);
-    assertThat(value.getLength(1)).isEqualTo(value1.length());
-    assertThat(getCleanFile(key, 0)).exists();
-    assertThat(getCleanFile(key, 1)).exists();
+    Assertions.assertThat(value.getString(0)).isEqualTo(value0);
+    Assertions.assertThat(value.getLength(0)).isEqualTo(value0.length());
+    Assertions.assertThat(value.getString(1)).isEqualTo(value1);
+    Assertions.assertThat(value.getLength(1)).isEqualTo(value1.length());
+    Assertions.assertThat(getCleanFile(key, 0)).exists();
+    Assertions.assertThat(getCleanFile(key, 1)).exists();
   }
 }

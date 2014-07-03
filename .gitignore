@@ -20,3 +20,4 @@ pom.xml.*
 
 #gradle
 build/**
+.gradle/**
