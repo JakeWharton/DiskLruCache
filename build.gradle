@@ -14,5 +14,3 @@ dependencies {
     testCompile 'commons-io:commons-io:2.1'
     testCompile 'org.easytesting:fest-assert-core:2.0M10'
 }
-
-apply from: "https://raw.githubusercontent.com/mcxiaoke/gradle-mvn-push/master/gradle-mvn-push.gradle"
