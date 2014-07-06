@@ -1,0 +1,20 @@
+apply plugin: 'java'
+apply plugin: 'checkstyle'
+
+repositories {
+  jcenter()
+}
+
+checkstyle {
+    configFile = new File(projectDir, 'checkstyle.xml')
+}
+
+dependencies {
+    testCompile 'junit:junit:4.10'
+    testCompile 'commons-io:commons-io:2.1'
+    testCompile 'org.easytesting:fest-assert-core:2.0M10'
+}
+
+if (hasProperty('APPLY_UPLOAD_SCRIPT')) {
+  apply from: "$rootProject.projectDir/scripts/upload.gradle"
+}

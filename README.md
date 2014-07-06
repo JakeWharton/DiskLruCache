@@ -48,24 +48,16 @@ appropriately.
 Obtaining
 =========
 
-You can include the library in your project by [downloading the .jar][jar].
-
 If you are a Maven user you can also add this library as a dependency. Add the
 following to your `pom.xml`:
 
 ```xml
 <dependency>
-  <groupId>com.jakewharton</groupId>
+  <groupId>com.bumptech.glide</groupId>
   <artifactId>disklrucache</artifactId>
   <version>(insert latest version)</version>
 </dependency>
 ```
-
-If you would like to compile your own version, the library can be built by
-running `mvn clean verify`. The output JAR will be in the `target/` directory.
-*(Note: this requires Maven be installed)*
-
-
 
 License
 =======
@@ -85,6 +77,3 @@ License
     See the License for the specific language governing permissions and
     limitations under the License.
 
-
-
- [jar]: http://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.jakewharton&a=disklrucache&v=LATEST

@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.jakewharton.disklrucache;
+package com.bumptech.glide.disklrucache;
+
+import junit.framework.Assert;
+
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 public class StrictLineReaderTest {
   @Test public void lineReaderConsistencyWithReadAsciiLine() {
@@ -37,15 +38,15 @@ public class StrictLineReaderTest {
           try {
             String line = lineReader.readLine();
             if (!refLine.equals(line)) {
-              fail("line (\"" + line + "\") differs from expected (\"" + refLine + "\").");
+              Assert.fail("line (\"" + line + "\") differs from expected (\"" + refLine + "\").");
             }
           } catch (EOFException eof) {
-            fail("line reader threw EOFException too early.");
+            Assert.fail("line reader threw EOFException too early.");
           }
         } catch (EOFException refEof) {
           try {
             lineReader.readLine();
-            fail("line reader didn't throw the expected EOFException.");
+            Assert.fail("line reader didn't throw the expected EOFException.");
           } catch (EOFException expected) {
             break;
           }
@@ -54,7 +55,7 @@ public class StrictLineReaderTest {
       refStream.close();
       lineReader.close();
     } catch (IOException ioe) {
-      fail("Unexpected IOException " + ioe.toString());
+      Assert.fail("Unexpected IOException " + ioe.toString());
     }
   }
 
