@@ -14,3 +14,5 @@ dependencies {
     testCompile 'commons-io:commons-io:2.1'
     testCompile 'org.easytesting:fest-assert-core:2.0M10'
 }
+
+apply from: "$rootProject.projectDir/scripts/upload.gradle"
