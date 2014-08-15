@@ -14,7 +14,3 @@ dependencies {
     testCompile 'commons-io:commons-io:2.1'
     testCompile 'org.easytesting:fest-assert-core:2.0M10'
 }
-
-if (hasProperty('APPLY_UPLOAD_SCRIPT')) {
-  apply from: "$rootProject.projectDir/scripts/upload.gradle"
-}
