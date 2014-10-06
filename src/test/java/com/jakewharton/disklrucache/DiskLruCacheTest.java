@@ -47,7 +47,7 @@ public final class DiskLruCacheTest {
   private File journalFile;
   private File journalBkpFile;
   private DiskLruCache cache;
-  
+
   @Rule public TemporaryFolder tempDir = new TemporaryFolder();
 
   @Before public void setUp() throws Exception {
@@ -485,7 +485,7 @@ public final class DiskLruCacheTest {
     set("b", "bb", "bbbb"); // size 6
     set("c", "c", "c"); // size 12
     cache.setMaxSize(10);
-    assertThat(cache.executorService.getTaskCount()).isEqualTo(1);
+    assertThat(cache.executorService.getQueue().size()).isEqualTo(1);
     cache.executorService.purge();
   }
 
