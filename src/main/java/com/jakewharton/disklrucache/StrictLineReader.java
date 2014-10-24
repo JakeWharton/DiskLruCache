@@ -176,6 +176,10 @@ class StrictLineReader implements Closeable {
     }
   }
 
+  public boolean hasUnterminatedLine() {
+    return end == -1;
+  }
+
   /**
    * Reads new input data into the buffer. Call only with pos == end or end == -1,
    * depending on the desired outcome if the function throws.

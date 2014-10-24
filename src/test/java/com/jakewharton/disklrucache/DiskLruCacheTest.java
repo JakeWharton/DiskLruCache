@@ -375,6 +375,12 @@ public final class DiskLruCacheTest {
     writer.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
     assertThat(cache.get("k1")).isNull();
+
+    // The journal is not corrupt when editing after a truncated line.
+    set("k1", "C", "D");
+    cache.close();
+    cache = DiskLruCache.open(cacheDir, appVersion, 2, Integer.MAX_VALUE);
+    assertValue("k1", "C", "D");
   }
 
   @Test public void openWithTooManyFileSizesClearsDirectory() throws Exception {
