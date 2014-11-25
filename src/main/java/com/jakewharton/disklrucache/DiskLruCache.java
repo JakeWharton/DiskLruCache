@@ -659,6 +659,7 @@ public final class DiskLruCache implements Closeable {
   public void delete() throws IOException {
     close();
     Util.deleteContents(directory);
+    lruEntries.clear();
   }
 
   private void validateKey(String key) {
