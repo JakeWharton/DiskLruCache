@@ -45,21 +45,23 @@ appropriately.
 
 
 
-Obtaining
-=========
+Download
+========
 
-You can include the library in your project by [downloading the .jar][jar].
-
-If you are a Maven user you can also add this library as a dependency. Add the
-following to your `pom.xml`:
-
+Download [the latest .jar][jar] or grab via Maven:
 ```xml
 <dependency>
   <groupId>com.jakewharton</groupId>
   <artifactId>disklrucache</artifactId>
-  <version>(insert latest version)</version>
+  <version>2.0.2</version>
 </dependency>
 ```
+or Gradle:
+```groovy
+compile 'com.jakewharton:disklrucache:2.0.2'
+```
+
+Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].
 
 If you would like to compile your own version, the library can be built by
 running `mvn clean verify`. The output JAR will be in the `target/` directory.
@@ -87,4 +89,5 @@ License
 
 
 
- [jar]: http://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.jakewharton&a=disklrucache&v=LATEST
+ [jar]: https://search.maven.org/remote_content?g=com.jakewharton&a=disklrucache&v=LATEST
+ [snap]: https://oss.sonatype.org/content/repositories/snapshots/
