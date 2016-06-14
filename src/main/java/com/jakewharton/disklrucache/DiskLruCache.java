@@ -424,9 +424,12 @@ public final class DiskLruCache implements Closeable {
     // snapshot. If we opened streams lazily then the streams could come
     // from different edits.
     InputStream[] ins = new InputStream[valueCount];
+    File[] files = new File[valueCount];
     try {
       for (int i = 0; i < valueCount; i++) {
-        ins[i] = new FileInputStream(entry.getCleanFile(i));
+        File fileAtIndex = entry.getCleanFile(i);
+        files[i] = fileAtIndex;
+        ins[i] = new FileInputStream(fileAtIndex);
       }
     } catch (FileNotFoundException e) {
       // A file must have been deleted manually!
@@ -446,7 +449,7 @@ public final class DiskLruCache implements Closeable {
       executorService.submit(cleanupCallable);
     }
 
-    return new Snapshot(key, entry.sequenceNumber, ins, entry.lengths);
+    return new Snapshot(key, entry.sequenceNumber, ins, files, entry.lengths);
   }
 
   /**
@@ -678,12 +681,17 @@ public final class DiskLruCache implements Closeable {
     private final String key;
     private final long sequenceNumber;
     private final InputStream[] ins;
+    /**
+     * Files array. InputStream from {@link #ins} are created from files in this array.
+     */
+    private final File[] files;
     private final long[] lengths;
 
-    private Snapshot(String key, long sequenceNumber, InputStream[] ins, long[] lengths) {
+    private Snapshot(String key, long sequenceNumber, InputStream[] ins, File[] files, long[] lengths) {
       this.key = key;
       this.sequenceNumber = sequenceNumber;
       this.ins = ins;
+      this.files = files;
       this.lengths = lengths;
     }
 
@@ -694,6 +702,11 @@ public final class DiskLruCache implements Closeable {
      */
     public Editor edit() throws IOException {
       return DiskLruCache.this.edit(key, sequenceNumber);
+    }
+
+    /** Returns File with the value for {@code index}. */
+    public File getFile(int index) {
+      return files[index];
     }
 
     /** Returns the unbuffered stream with the value for {@code index}. */

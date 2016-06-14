@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -883,6 +884,47 @@ public final class DiskLruCacheTest {
   @Test public void aggressiveClearingHandlesRead() throws Exception {
     FileUtils.deleteDirectory(cacheDir);
     assertThat(cache.get("a")).isNull();
+  }
+
+  /**
+   * This test proves that we will see the same behaviour working with
+   * {@link File} and {@link InputStream}
+   * If entry was evicted we can not use either of them.
+   */
+  @Test public void tryToUseDataAfterEvicted() throws Exception{
+    cache.close();
+    cache = DiskLruCache.open(cacheDir, appVersion, 2, 3);
+
+    set("a", "a", "aa"); // size 3
+    assertThat(cache.size()).isEqualTo(3);
+
+    DiskLruCache.Snapshot snapshot = cache.get("a");
+    String stringAt_a = snapshot.getString(0);
+    File fileAtEntry = snapshot.getFile(0);
+
+    // assert string at "a" is correct
+    assertThat(stringAt_a).isEqualTo("a");
+    // assert that file at "a" exists
+    assertThat(fileAtEntry.exists()).isTrue();
+
+    // Causing the size to grow to 4 should evict 'a'.
+    set("b", "b", "bbbb");
+    cache.flush();
+
+    String stringAtAfterEvict = null;
+    try {
+      stringAtAfterEvict = snapshot.getString(0);
+    } catch (IOException exception){
+      assertThat(exception.getMessage()).isEqualTo("Stream Closed");
+    }
+
+    // assert that we failed to get string
+    assertThat(stringAtAfterEvict).isNull();
+
+    // assert that file doesn't exist after evict
+    File fileAtAfterEvict = snapshot.getFile(0);
+    assertThat(fileAtAfterEvict.exists()).isFalse();
+
   }
 
   private void assertJournalEquals(String... expectedBodyLines) throws Exception {
