@@ -403,6 +403,13 @@ public final class DiskLruCache implements Closeable {
     }
   }
 
+  public boolean contains(String key) {
+    checkNotClosed();
+    validateKey(key);
+    Entry entry = lruEntries.get(key);
+    return (entry != null);
+  }
+
   /**
    * Returns a snapshot of the entry named {@code key}, or null if it doesn't
    * exist is not currently readable. If a value is returned, it is moved to
