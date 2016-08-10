@@ -1,0 +1,33 @@
+apply plugin: 'java'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+        }
+    }
+    unitTest {
+        java.srcDir file('src/test/java')
+        resources.srcDir file('src/test/resources')
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+  testCompile 'commons-io:commons-io:2.4'
+  testCompile 'org.easytesting:fest-assert-core:+'
+  testCompile 'junit:junit:4.+'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.10'
+}
+
+task unitTest(type:Test, dependsOn: assemble) {
+    description = "Run unit tests"
+    testClassesDir = project.sourceSets.unitTest.output.classesDir
+    classpath = project.sourceSets.unitTest.runtimeClasspath
+}
