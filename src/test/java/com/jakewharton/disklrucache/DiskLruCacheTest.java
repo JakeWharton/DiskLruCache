@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -883,6 +884,42 @@ public final class DiskLruCacheTest {
   @Test public void aggressiveClearingHandlesRead() throws Exception {
     FileUtils.deleteDirectory(cacheDir);
     assertThat(cache.get("a")).isNull();
+  }
+
+  @Test public void deleteAfterCacheDirectoryIsDeletedExternallyDoesNotThrow()
+      throws IOException {
+    FileUtils.deleteDirectory(cacheDir);
+    cache.delete();
+  }
+
+  @Test public void deleteWithNotReadableCacheDirectoryThowsIOException()
+      throws IOException {
+    try {
+      if (!cacheDir.setReadable(false)) {
+        fail("Unable to set writable on: " + cacheDir);
+      }
+      cache.delete();
+      fail("Expected delete to throw");
+    } catch (IOException e) {
+      // Expected.
+    } finally {
+       cacheDir.setReadable(true);
+    }
+  }
+
+  @Test public void deleteWithNotWritableCacheDirectoryThowsIOException()
+      throws IOException {
+    try {
+      if (!cacheDir.setWritable(false)) {
+        fail("Unable to set writable on: " + cacheDir);
+      }
+      cache.delete();
+      fail("Expected delete to throw");
+    } catch (IOException e) {
+      // Expected.
+    } finally {
+       cacheDir.setWritable(true);
+    }
   }
 
   private void assertJournalEquals(String... expectedBodyLines) throws Exception {
