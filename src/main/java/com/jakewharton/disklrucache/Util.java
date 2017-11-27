@@ -50,6 +50,9 @@ final class Util {
    * could not be deleted, or if {@code dir} is not a readable directory.
    */
   static void deleteContents(File dir) throws IOException {
+    if (!dir.exists()) {
+      return;
+    }
     File[] files = dir.listFiles();
     if (files == null) {
       throw new IOException("not a readable directory: " + dir);
