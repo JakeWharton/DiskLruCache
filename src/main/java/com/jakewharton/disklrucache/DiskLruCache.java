@@ -149,7 +149,7 @@ public final class DiskLruCache implements Closeable {
   private long size = 0;
   private Writer journalWriter;
   private final LinkedHashMap<String, Entry> lruEntries =
-      new LinkedHashMap<String, Entry>(0, 0.75f, true);
+      new LinkedHashMap<String, Entry>(0, 0.75f, false);
   private int redundantOpCount;
 
   /**
@@ -316,7 +316,10 @@ public final class DiskLruCache implements Closeable {
     } else if (secondSpace == -1 && firstSpace == DIRTY.length() && line.startsWith(DIRTY)) {
       entry.currentEditor = new Editor(entry);
     } else if (secondSpace == -1 && firstSpace == READ.length() && line.startsWith(READ)) {
-      // This work was already done by calling lruEntries.get().
+      synchronized (this) {
+        lruEntries.remove(key);
+        lruEntries.put(key, entry);
+      }
     } else {
       throw new IOException("unexpected journal line: " + line);
     }
@@ -403,15 +406,14 @@ public final class DiskLruCache implements Closeable {
     }
   }
 
-  /**
-   * Returns a snapshot of the entry named {@code key}, or null if it doesn't
-   * exist is not currently readable. If a value is returned, it is moved to
-   * the head of the LRU queue.
-   */
-  public synchronized Snapshot get(String key) throws IOException {
+  public synchronized Snapshot get(String key, boolean moveOrderAccess) throws IOException {
     checkNotClosed();
     validateKey(key);
     Entry entry = lruEntries.get(key);
+    if (entry != null && moveOrderAccess) {
+      lruEntries.remove(key);
+      lruEntries.put(key, entry);
+    }
     if (entry == null) {
       return null;
     }
@@ -440,13 +442,23 @@ public final class DiskLruCache implements Closeable {
       return null;
     }
 
-    redundantOpCount++;
-    journalWriter.append(READ + ' ' + key + '\n');
-    if (journalRebuildRequired()) {
-      executorService.submit(cleanupCallable);
+    if (moveOrderAccess) {
+      redundantOpCount++;
+      journalWriter.append(READ + ' ' + key + '\n');
+      if (journalRebuildRequired()) {
+        executorService.submit(cleanupCallable);
+      }
     }
 
     return new Snapshot(key, entry.sequenceNumber, ins, entry.lengths);
+  }
+  /**
+   * Returns a snapshot of the entry named {@code key}, or null if it doesn't
+   * exist is not currently readable. If a value is returned, it is moved to
+   * the head of the LRU queue.
+   */
+  public synchronized Snapshot get(String key) throws IOException {
+    return get(key, true);
   }
 
   /**
@@ -461,6 +473,10 @@ public final class DiskLruCache implements Closeable {
     checkNotClosed();
     validateKey(key);
     Entry entry = lruEntries.get(key);
+    if(entry != null) {
+      lruEntries.remove(key);
+      lruEntries.put(key, entry);
+    }
     if (expectedSequenceNumber != ANY_SEQUENCE_NUMBER && (entry == null
         || entry.sequenceNumber != expectedSequenceNumber)) {
       return null; // Snapshot is stale.

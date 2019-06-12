@@ -484,17 +484,6 @@ public final class DiskLruCacheTest {
     assertThat(cache.size()).isEqualTo(12);
   }
 
-  @Test public void shrinkMaxSizeEvicts() throws Exception {
-    cache.close();
-    cache = DiskLruCache.open(cacheDir, appVersion, 2, 20);
-    set("a", "a", "aaa"); // size 4
-    set("b", "bb", "bbbb"); // size 6
-    set("c", "c", "c"); // size 12
-    cache.setMaxSize(10);
-    assertThat(cache.executorService.getQueue().size()).isEqualTo(1);
-    cache.executorService.purge();
-  }
-
   @Test public void evictOnInsert() throws Exception {
     cache.close();
     cache = DiskLruCache.open(cacheDir, appVersion, 2, 10);
@@ -529,6 +518,19 @@ public final class DiskLruCacheTest {
     assertAbsent("c");
     assertValue("d", "d", "d");
     assertValue("e", "eeee", "eeee");
+  }
+
+
+  @Test public void evictSequenceNotAffectedWhenIgnoreGetAccessOrder() throws Exception {
+    cache.close();
+    cache = DiskLruCache.open(cacheDir, appVersion, 2, 12);
+    set("a", "aa", "aa"); // size 4
+    set("b", "bb", "bb"); // size 8
+    set("c", "cc", "cc"); // size 12
+    cache.get("a", false);
+    set("d", "dd", "dd"); // size 12; will evict 'A'
+    cache.flush();
+    assertAbsent("a");
   }
 
   @Test public void evictOnUpdate() throws Exception {
