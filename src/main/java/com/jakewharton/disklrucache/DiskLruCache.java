@@ -31,8 +31,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.ExtendedLinkedHashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -148,8 +148,8 @@ public final class DiskLruCache implements Closeable {
   private final int valueCount;
   private long size = 0;
   private Writer journalWriter;
-  private final LinkedHashMap<String, Entry> lruEntries =
-      new LinkedHashMap<String, Entry>(0, 0.75f, true);
+  private final ExtendedLinkedHashMap<String, Entry> lruEntries =
+      new ExtendedLinkedHashMap<String, Entry>(0, 0.75f, true);
   private int redundantOpCount;
 
   /**
@@ -403,15 +403,10 @@ public final class DiskLruCache implements Closeable {
     }
   }
 
-  /**
-   * Returns a snapshot of the entry named {@code key}, or null if it doesn't
-   * exist is not currently readable. If a value is returned, it is moved to
-   * the head of the LRU queue.
-   */
-  public synchronized Snapshot get(String key) throws IOException {
+  public synchronized Snapshot get(String key, boolean moveOrderAccess) throws IOException {
     checkNotClosed();
     validateKey(key);
-    Entry entry = lruEntries.get(key);
+    Entry entry = lruEntries.get(key, moveOrderAccess);
     if (entry == null) {
       return null;
     }
@@ -447,6 +442,14 @@ public final class DiskLruCache implements Closeable {
     }
 
     return new Snapshot(key, entry.sequenceNumber, ins, entry.lengths);
+  }
+  /**
+   * Returns a snapshot of the entry named {@code key}, or null if it doesn't
+   * exist is not currently readable. If a value is returned, it is moved to
+   * the head of the LRU queue.
+   */
+  public synchronized Snapshot get(String key) throws IOException {
+    return get(key, true);
   }
 
   /**
